@@ -5,7 +5,7 @@
 #define ROUND(n)  (((size_t)(n)+ALIGN-1)&(~(size_t)(ALIGN-1)))
 
 // This kernel is executed with a very high number of threads = total number of vertices * 3
-__kernel
+	__kernel
 void eating(__global float *vbo, float dy, unsigned vertices_per_atom)
 {
 	int index = get_global_id(0);
@@ -20,7 +20,7 @@ void eating(__global float *vbo, float dy, unsigned vertices_per_atom)
 	vbo[index] += dy * is_y * is_up * enable;
 }
 
-__kernel
+	__kernel
 void move_vertices(__global float *vbo, __global float *speed, unsigned vertices_per_atom)
 {
 	int index = get_global_id(0);
@@ -58,6 +58,38 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 __kernel
 void atom_collision(__global float *pos, __global float *speed, float radius)
 {
+	int N = get_global_size(0);
+	int atom_no = get_global_id(0);
+
+	float3 mypos, otherpos;
+	mypos.x = pos[atom_no];
+	mypos.y = pos[atom_no + ROUND(N)];
+	mypos.z = pos[atom_no + 2 * ROUND(N)];
+
+	char colfound = 0;
+	float coldist = 2*radius;
+
+	int i;
+	for (i = 0; i < atom_no; i++) {
+		otherpos.x = pos[i];
+		otherpos.y = pos[i + ROUND(N)];
+		otherpos.z = pos[i + 2 * ROUND(N)];
+
+		float d = distance(mypos, otherpos);
+
+		if (d <= coldist) {
+			colfound = 1;
+			speed[i] = 0;
+			speed[i + ROUND(N)] = 0;
+			speed[i + 2 * ROUND(N)] = 0;
+		}
+	}		
+
+	if (colfound == 1) {
+		speed[atom_no] = 0;
+		speed[atom_no + ROUND(N)] = 0;
+		speed[atom_no + 2 * ROUND(N)] = 0;
+	}
 }
 
 __kernel

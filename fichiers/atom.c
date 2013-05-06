@@ -245,7 +245,7 @@ static void atom_collision(void)
 	err  |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = 1; // TODO: CHANGE!!!
+	global = natoms; // TODO: CHANGE!!!
 	local = 1; // Set workgroup size to 1
 
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
