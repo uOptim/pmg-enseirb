@@ -111,7 +111,7 @@ void atom_collision_v2(__global float *pos, __global float *speed, float radius)
 		atom_collision_loop(atom2, pos, speed, N, 2*radius);
 	}
 
-	if (N % 2 == 1) {
+	else if (atom1 == atom2) {
 		atom_collision_loop(atom1, pos, speed, N, 2*radius);
 	}
 }
