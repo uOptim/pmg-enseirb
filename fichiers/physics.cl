@@ -55,22 +55,18 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 	}
 }
 
-__kernel
-void atom_collision(__global float *pos, __global float *speed, float radius)
+void atom_collision_loop(int atom, __global float *pos, __global float *speed, int N, float coldist)
 {
-	int N = get_global_size(0);
-	int atom_no = get_global_id(0);
+	int i;
+	char colfound = 0;
 
 	float3 mypos, otherpos;
-	mypos.x = pos[atom_no];
-	mypos.y = pos[atom_no + ROUND(N)];
-	mypos.z = pos[atom_no + 2 * ROUND(N)];
 
-	char colfound = 0;
-	float coldist = 2*radius;
+	mypos.x = pos[atom];
+	mypos.y = pos[atom + ROUND(N)];
+	mypos.z = pos[atom + 2 * ROUND(N)];
 
-	int i;
-	for (i = 0; i < atom_no; i++) {
+	for (i = 0; i < atom; i++) {
 		otherpos.x = pos[i];
 		otherpos.y = pos[i + ROUND(N)];
 		otherpos.z = pos[i + 2 * ROUND(N)];
@@ -86,10 +82,45 @@ void atom_collision(__global float *pos, __global float *speed, float radius)
 	}		
 
 	if (colfound == 1) {
-		speed[atom_no] = 0;
-		speed[atom_no + ROUND(N)] = 0;
-		speed[atom_no + 2 * ROUND(N)] = 0;
+		speed[atom] = 0;
+		speed[atom + ROUND(N)] = 0;
+		speed[atom + 2 * ROUND(N)] = 0;
 	}
+}
+
+
+void atom_collision_v1(__global float *pos, __global float *speed, float radius)
+{
+	int N = get_global_size(0);
+	int atom_no = get_global_id(0);
+
+	atom_collision_loop(atom_no, pos, speed, N, 2*radius);
+}
+
+
+void atom_collision_v2(__global float *pos, __global float *speed, float radius)
+	// pas forcément plus efficace car cette fois-ci nous avons deux fois
+	// moins de threads
+{
+	int N = get_global_size(0);
+	int atom1 = get_global_id(0);
+	int atom2 = N - get_global_id(0) - 1;
+
+	if (atom1 < N / 2) {
+		atom_collision_loop(atom1, pos, speed, N, 2*radius);
+		atom_collision_loop(atom2, pos, speed, N, 2*radius);
+	}
+
+	if (N % 2 == 1) {
+		atom_collision_loop(atom1, pos, speed, N, 2*radius);
+	}
+}
+
+__kernel
+void atom_collision(__global float *pos, __global float *speed, float radius)
+{
+	//atom_collision_v1(pos, speed, radius);
+	atom_collision_v2(pos, speed, radius);
 }
 
 __kernel
