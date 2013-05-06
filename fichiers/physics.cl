@@ -126,6 +126,10 @@ void atom_collision(__global float *pos, __global float *speed, float radius)
 __kernel
 void gravity(__global float *pos, __global float *speed, float g)
 {
+	int N = get_global_size(0);
+	int atom = get_global_id(0);
+
+	speed[atom + ROUND(N)] -= g;
 }
 
 __kernel

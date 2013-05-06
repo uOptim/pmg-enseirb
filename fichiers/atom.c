@@ -287,7 +287,7 @@ static void gravity(void)
 	err  |= clSetKernelArg(gravity_kernel, 2, sizeof(float), &g);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = 1; // TODO: CHANGE!!!
+	global = natoms; // TODO: CHANGE!!!
 	local = 1; // Set workgroup size to 1
 
 	err = clEnqueueNDRangeKernel(queue, gravity_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
