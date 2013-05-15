@@ -57,35 +57,70 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 
 void atom_collision_loop(int atom, __global float *pos, __global float *speed, int N, float coldist)
 {
-	int i;
-	char colfound = 0;
+	int a;
 
-	float3 mypos, otherpos;
+	float d;
+	float3 i, j, k;
+	float3 Ca, Cb;
 
-	mypos.x = pos[atom];
-	mypos.y = pos[atom + ROUND(N)];
-	mypos.z = pos[atom + 2 * ROUND(N)];
+	Ca.x = pos[atom];
+	Ca.y = pos[atom + ROUND(N)];
+	Ca.z = pos[atom + 2 * ROUND(N)];
 
-	for (i = 0; i < atom; i++) {
-		otherpos.x = pos[i];
-		otherpos.y = pos[i + ROUND(N)];
-		otherpos.z = pos[i + 2 * ROUND(N)];
+	float3 x, y, z;
+	x.x = 1; x.y = 0; x.z = 0;
+	y.x = 0; y.y = 1; y.z = 0;
+	z.x = 0; z.y = 0; z.z = 1;
 
-		float d = distance(mypos, otherpos);
+	float3 Va, Vb;
+	float3 m1, m2, m3;       // M
+	float3 mt1, mt2, mt3;    // tM
+	float3 Var, Vpar;        // V_A_r, V'_A_r
+	float3 Vbr, Vpbr;        // V_B_r, V'_B_r
+
+	Va.x = speed[atom];
+	Va.y = speed[atom + ROUND(N)];
+	Va.z = speed[atom + 2 * ROUND(N)];
+
+	for (a = 0; a < atom; a++) {
+		Cb.x = pos[a];
+		Cb.y = pos[a + ROUND(N)];
+		Cb.z = pos[a + 2 * ROUND(N)];
+
+		d = distance(Ca, Cb);
 
 		if (d <= coldist) {
-			colfound = 1;
-			speed[i] = 0;
-			speed[i + ROUND(N)] = 0;
-			speed[i + 2 * ROUND(N)] = 0;
+			Vb.x = speed[a];
+			Vb.y = speed[a + ROUND(N)];
+			Vb.z = speed[a + 2 * ROUND(N)];
+
+			i = normalize(Ca - Cb);
+			j = normalize(cross(x, i));
+			k = cross(i, j);
+
+			m1 = i;
+			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
+			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x)       ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
+
+			mt1.x = m1.x; mt1.y = m2.x; mt2.z = m3.x;
+			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
+			mt3.x = m1.z; mt3.y = m2.z; mt3.z = m3.z;
+
+			Var.x = dot(Va, m1); Var.y = dot(Va, m2); Var.z = dot(Va, m3);
+			Vbr.x = dot(Vb, m1); Vbr.y = dot(Vb, m2); Vbr.z = dot(Vb, m3);
+
+			Vpar = Var; Vpar.x = Vbr.x;
+			Vpbr = Vbr; Vpbr.x = Var.x;
+
+			speed[atom]              = dot(Vpar, mt1);
+			speed[atom + ROUND(N)]   = dot(Vpar, mt2);
+			speed[atom + 2*ROUND(N)] = dot(Vpar, mt3);
+
+			speed[a]              = dot(Vpbr, mt1);
+			speed[a + ROUND(N)]   = dot(Vpbr, mt2);
+			speed[a + 2*ROUND(N)] = dot(Vpbr, mt3);
 		}
 	}		
-
-	if (colfound == 1) {
-		speed[atom] = 0;
-		speed[atom + ROUND(N)] = 0;
-		speed[atom + 2 * ROUND(N)] = 0;
-	}
 }
 
 
