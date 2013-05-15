@@ -204,7 +204,7 @@ static void border_collision(void)
 	err  |= clSetKernelArg(border_col_kernel, 5, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = natoms * 3; // TODO: CHANGE!!!
+	global = natoms * 3;
 	local = 1; // Set workgroup size to 1
 
 	err = clEnqueueNDRangeKernel(queue, border_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);

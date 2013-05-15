@@ -50,7 +50,11 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 
 	int true_idx = atom_no + compo * ROUND(N);
 
-	if (pos[true_idx] < (min[compo]+radius) || pos[true_idx] > (max[compo]-radius)) {
+	if (pos[true_idx] < (min[compo]+radius) && speed[true_idx] < 0) {
+		speed[true_idx] *= -1;
+	}
+	
+	if (pos[true_idx] > (max[compo]-radius) && speed[true_idx] > 0) {
 		speed[true_idx] *= -1;
 	}
 }
