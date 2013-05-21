@@ -285,7 +285,7 @@ static void atom_force(void)
 	err	 |= clSetKernelArg(atom_force_kernel, 2, sizeof(float), &radius);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = 1; // TODO: CHANGE!!!
+	global = natoms;
 	local = 1; // Set workgroup size to 1
 
 	err = clEnqueueNDRangeKernel(queue, atom_force_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);

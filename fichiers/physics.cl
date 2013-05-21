@@ -4,6 +4,9 @@
 #define ALIGN     16
 #define ROUND(n)  (((size_t)(n)+ALIGN-1)&(~(size_t)(ALIGN-1)))
 
+#define SIGMA 1.25
+#define EPSILON 0.005
+
 // This kernel is executed with a very high number of threads = total number of vertices * 3
 	__kernel
 void eating(__global float *vbo, float dy, unsigned vertices_per_atom)
@@ -77,10 +80,10 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 	z.x = 0; z.y = 0; z.z = 1;
 
 	float3 Va, Vb;
-	float3 m1, m2, m3;       // M
-	float3 mt1, mt2, mt3;    // tM
-	float3 Var, Vpar;        // V_A_r, V'_A_r
-	float3 Vbr, Vpbr;        // V_B_r, V'_B_r
+	float3 m1, m2, m3;    // M
+	float3 mt1, mt2, mt3; // tM
+	float3 Var, Vpar;     // V_A_r, V'_A_r
+	float3 Vbr, Vpbr;     // V_B_r, V'_B_r
 
 	Va.x = speed[atom];
 	Va.y = speed[atom + ROUND(N)];
@@ -105,7 +108,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 
 			m1 = i;
 			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
-			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x)       ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
+			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
 
 			mt1.x = m1.x; mt1.y = m2.x; mt2.z = m3.x;
 			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
@@ -125,7 +128,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 			speed[a + ROUND(N)]   = dot(Vpbr, mt2);
 			speed[a + 2*ROUND(N)] = dot(Vpbr, mt3);
 		}
-	}		
+	}
 }
 
 
@@ -175,4 +178,46 @@ void gravity(__global float *pos, __global float *speed, float g)
 __kernel
 void lennard_jones(__global float *pos, __global float *speed, float radius)
 {
+	int N = get_global_size(0);
+	int atom = get_global_id(0);
+
+	float d, energy;
+	float3 Ca, Cb, diff;
+
+	Ca.x = pos[atom];
+	Ca.y = pos[atom + ROUND(N)];
+	Ca.z = pos[atom + 2 * ROUND(N)];
+
+	float3 speedDelta;
+
+	speedDelta.x = 0;
+	speedDelta.y = 0;
+	speedDelta.z = 0;
+
+	int a;
+	for (a = 0; a < N; a++) {
+		if (a == atom)
+			continue;
+		Cb.x = pos[a];
+		Cb.y = pos[a + ROUND(N)];
+		Cb.z = pos[a + 2 * ROUND(N)];
+
+		d = distance(Ca, Cb);
+
+		float tmp = SIGMA / d;
+
+		float energy = 4 * EPSILON * (pow(tmp,12) - pow(tmp,6));
+
+		diff = normalize(Ca - Cb);
+
+		speedDelta.x += diff.x * energy;
+		speedDelta.y += diff.y * energy;
+		speedDelta.z += diff.z * energy;
+	}
+
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	speed[atom] += speedDelta.x;
+	speed[atom + ROUND(N)] += speedDelta.y;
+	speed[atom + 2 * ROUND(N)] += speedDelta.z;
 }
