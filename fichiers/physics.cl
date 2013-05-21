@@ -99,6 +99,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 			Vb.z = speed[a + 2 * ROUND(N)];
 
 			i = normalize(Ca - Cb);
+			if (i.x == -1) i.x = 1;// y and j are 0 if x is 1/-1
 			j = normalize(cross(x, i));
 			k = cross(i, j);
 
