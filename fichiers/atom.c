@@ -196,12 +196,12 @@ void printAtoms()
 	int i;
 	for (i = 0; i < natoms; i++){
 		printf("Atom %d\n", i);
-		printf("\tpos_x : %f\n", x_atom(i));
-		printf("\tpos_y : %f\n", y_atom(i));
-		printf("\tpos_z : %f\n", z_atom(i));
-		printf("\tspeed_x : %f\n", x_speed(i));
-		printf("\tspeed_y : %f\n", y_speed(i));
-		printf("\tspeed_z : %f\n", z_speed(i));
+		printf("\t%i: pos_x   : %f\n", i, x_atom(i));
+		printf("\t%i: pos_y   : %f\n", i, y_atom(i));
+		printf("\t%i: pos_z   : %f\n", i, z_atom(i));
+		printf("\t%i: speed_x : %f\n", i, x_speed(i));
+		printf("\t%i: speed_y : %f\n", i, y_speed(i));
+		printf("\t%i: speed_z : %f\n", i, z_speed(i));
 	}
 }
 
