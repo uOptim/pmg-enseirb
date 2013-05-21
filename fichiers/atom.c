@@ -44,10 +44,10 @@ int natoms = 0;
 AtomPosType atom_pos;
 AtomSpeedType atom_speed;
 
-float min_ext[3], max_ext[3];  /* Range of atomic coordinates:
-								  (left,lower,back), (right,top,front) */
+float min_ext[3], max_ext[3];	 /* Range of atomic coordinates:
+									(left,lower,back), (right,top,front) */
 
-unsigned long TIMER_VAL = 50;   /* atom position update interval (in milliseconds) */
+unsigned long TIMER_VAL = 50;		/* atom position update interval (in milliseconds) */
 unsigned eating_enabled = 0;
 unsigned move_enabled = 0;
 unsigned detect_collision = 0;
@@ -191,35 +191,35 @@ void initializeComputeDevices(void)
 
 void printAtoms()
 {
-  ocl_readAtomCoordinatesFromAccel();
-  ocl_readAtomSpeedFromAccel();
-  int i;
-  for (i = 0; i < natoms; i++){
-    printf("Atom %d\n", i);
-    printf("\tpos_x : %f\n", x_atom(i));
-    printf("\tpos_y : %f\n", y_atom(i));
-    printf("\tpos_z : %f\n", z_atom(i));
-    printf("\tspeed_x : %f\n", x_speed(i));
-    printf("\tspeed_y : %f\n", y_speed(i));
-    printf("\tspeed_z : %f\n", z_speed(i));
-  }
+	ocl_readAtomCoordinatesFromAccel();
+	ocl_readAtomSpeedFromAccel();
+	int i;
+	for (i = 0; i < natoms; i++){
+		printf("Atom %d\n", i);
+		printf("\tpos_x : %f\n", x_atom(i));
+		printf("\tpos_y : %f\n", y_atom(i));
+		printf("\tpos_z : %f\n", z_atom(i));
+		printf("\tspeed_x : %f\n", x_speed(i));
+		printf("\tspeed_y : %f\n", y_speed(i));
+		printf("\tspeed_z : %f\n", z_speed(i));
+	}
 }
 
 static void border_collision(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
-	float radius = ATOM_RADIUS;         // collision when closer than atom radius
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
+	float radius = ATOM_RADIUS;					// collision when closer than atom radius
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(border_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
-	err  |= clSetKernelArg(border_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(border_col_kernel, 2, sizeof(cl_mem), &min_buffer);
-	err  |= clSetKernelArg(border_col_kernel, 3, sizeof(cl_mem), &max_buffer);
-	err  |= clSetKernelArg(border_col_kernel, 4, sizeof(float), &radius);
-	err  |= clSetKernelArg(border_col_kernel, 5, sizeof(natoms), &natoms);
+	err	 = clSetKernelArg(border_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(border_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(border_col_kernel, 2, sizeof(cl_mem), &min_buffer);
+	err	 |= clSetKernelArg(border_col_kernel, 3, sizeof(cl_mem), &max_buffer);
+	err	 |= clSetKernelArg(border_col_kernel, 4, sizeof(float), &radius);
+	err	 |= clSetKernelArg(border_col_kernel, 5, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = natoms * 3;
@@ -232,14 +232,14 @@ static void border_collision(void)
 static void update_position(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(update_position_kernel, 0, sizeof(cl_mem), &pos_buffer);
-	err  |= clSetKernelArg(update_position_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(update_position_kernel, 2, sizeof(natoms), &natoms);
+	err	 = clSetKernelArg(update_position_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(update_position_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(update_position_kernel, 2, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = natoms * 3; // TODO: CHANGE!!!
@@ -252,15 +252,15 @@ static void update_position(void)
 static void atom_collision(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
-	float radius = ATOM_RADIUS;         // collision when closer to atom radius
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
+	float radius = ATOM_RADIUS;					// collision when closer to atom radius
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
-	err  |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
+	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = natoms; // TODO: CHANGE!!!
@@ -274,15 +274,15 @@ static void atom_collision(void)
 static void atom_force(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
 	float radius = ATOM_RADIUS;
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(atom_force_kernel, 0, sizeof(cl_mem), &pos_buffer);
-	err  |= clSetKernelArg(atom_force_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(atom_force_kernel, 2, sizeof(float), &radius);
+	err	 = clSetKernelArg(atom_force_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(atom_force_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(atom_force_kernel, 2, sizeof(float), &radius);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = 1; // TODO: CHANGE!!!
@@ -295,15 +295,15 @@ static void atom_force(void)
 static void gravity(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
-	float g = 0.005;                   // gravity acceleration
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
+	float g = 0.005;									 // gravity acceleration
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(gravity_kernel, 0, sizeof(cl_mem), &pos_buffer);
-	err  |= clSetKernelArg(gravity_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(gravity_kernel, 2, sizeof(float), &g);
+	err	 = clSetKernelArg(gravity_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(gravity_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(gravity_kernel, 2, sizeof(float), &g);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = natoms; // TODO: CHANGE!!!
@@ -316,14 +316,14 @@ static void gravity(void)
 static void move_vertices(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(move_vertices_kernel, 0, sizeof(cl_mem), &vbo_buffer);
-	err  |= clSetKernelArg(move_vertices_kernel, 1, sizeof(cl_mem), &speed_buffer);
-	err  |= clSetKernelArg(move_vertices_kernel, 2, sizeof(unsigned), &vertices_per_atom);
+	err	 = clSetKernelArg(move_vertices_kernel, 0, sizeof(cl_mem), &vbo_buffer);
+	err	 |= clSetKernelArg(move_vertices_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(move_vertices_kernel, 2, sizeof(unsigned), &vertices_per_atom);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = 3 * nb_vertices; // TODO: CHANGE!!!
@@ -333,24 +333,24 @@ static void move_vertices(void)
 	check(err, "Failed to execute kernel!\n");
 }
 
-#define PERIOD    9
+#define PERIOD		9
 static float dy = -0.01;
 static unsigned long step = 0;
 
 static void eating(void)
 {
 	cl_event prof_event;
-	size_t global;                      // global domain size for our calculation
-	size_t local;                       // local domain size for our calculation
+	size_t global;											// global domain size for our calculation
+	size_t local;												// local domain size for our calculation
 
 	if(step++ % PERIOD == 0)
 		dy *= -1;
 
 	// Set the arguments to our compute kernel
 	//
-	err  = clSetKernelArg(eating_kernel, 0, sizeof(cl_mem), &vbo_buffer);
-	err  |= clSetKernelArg(eating_kernel, 1, sizeof(float), &dy);
-	err  |= clSetKernelArg(eating_kernel, 2, sizeof(unsigned), &vertices_per_atom);
+	err	 = clSetKernelArg(eating_kernel, 0, sizeof(cl_mem), &vbo_buffer);
+	err	 |= clSetKernelArg(eating_kernel, 1, sizeof(float), &dy);
+	err	 |= clSetKernelArg(eating_kernel, 2, sizeof(unsigned), &vertices_per_atom);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	global = nb_vertices*3; // One thread per vertex coordinate -> 3 * #vertices
@@ -384,7 +384,7 @@ void animateGPU(void)
 			gravity();
 
 		if(detect_collision)
-			//  check collisions between atoms
+			//	check collisions between atoms
 			atom_collision();
 
 		// check border collision, invert speed component if needed
@@ -397,7 +397,7 @@ void animateGPU(void)
 		move_vertices();
 
 #ifdef DEBUG
-    printAtoms();
+		printAtoms();
 #endif
 	}
 
