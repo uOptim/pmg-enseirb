@@ -275,6 +275,19 @@ void ocl_readAtomCoordinatesFromAccel(void)
 	clFinish(queue);
 }
 
+void ocl_readAtomSpeedFromAccel(void)
+{
+	cl_int err;
+
+	// Transfer position buffer back
+	//
+	err = clEnqueueReadBuffer(queue, speed_buffer, CL_TRUE, 0,
+			atomSpeedSize(), atomSpeedAddr(), 0, NULL, NULL);
+	check(err, "Failed to read from atom speeds array!\n");
+
+	clFinish(queue);
+}
+
 void ocl_updateVBOFromHost(void)
 {
 	cl_int err;

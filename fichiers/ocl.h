@@ -13,6 +13,7 @@ void ocl_init(cl_device_type device_type, char *program_name);
 
 void ocl_kernelCreate(char *entry_point, cl_kernel *kernel);
 void ocl_readAtomCoordinatesFromAccel(void);
+void ocl_readAtomSpeedFromAccel(void);
 void ocl_updateVBOFromHost(void);
 
 void ocl_finalize(void);

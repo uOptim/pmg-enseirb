@@ -23,6 +23,8 @@ char *MD_FILE = "default.conf";
 #define y_speed(a) (atom_speed.dy[a])
 #define z_speed(a) (atom_speed.dz[a])
 
+//#define DEBUG
+
 // atom positions (looks like 3 arrays, but allocated once contiguously)
 typedef struct {
 	float *x;
@@ -187,6 +189,22 @@ void initializeComputeDevices(void)
 	ocl_kernelCreate("gravity", &gravity_kernel);
 }
 
+void printAtoms()
+{
+  ocl_readAtomCoordinatesFromAccel();
+  ocl_readAtomSpeedFromAccel();
+  int i;
+  for (i = 0; i < natoms; i++){
+    printf("Atom %d\n", i);
+    printf("\tpos_x : %f\n", x_atom(i));
+    printf("\tpos_y : %f\n", y_atom(i));
+    printf("\tpos_z : %f\n", z_atom(i));
+    printf("\tspeed_x : %f\n", x_speed(i));
+    printf("\tspeed_y : %f\n", y_speed(i));
+    printf("\tspeed_z : %f\n", z_speed(i));
+  }
+}
+
 static void border_collision(void)
 {
 	cl_event prof_event;
@@ -247,6 +265,7 @@ static void atom_collision(void)
 
 	global = natoms; // TODO: CHANGE!!!
 	local = 1; // Set workgroup size to 1
+
 
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
@@ -376,6 +395,10 @@ void animateGPU(void)
 
 		// move all the vertices
 		move_vertices();
+
+#ifdef DEBUG
+    printAtoms();
+#endif
 	}
 
 	// Wait for the command commands to get serviced before reading back results
