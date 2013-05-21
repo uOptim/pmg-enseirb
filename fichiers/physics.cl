@@ -1,4 +1,3 @@
-
 #pragma OPENCL EXTENSION all : enable
 
 #define ALIGN     16
@@ -110,7 +109,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
 			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
 
-			mt1.x = m1.x; mt1.y = m2.x; mt2.z = m3.x;
+			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
 			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
 			mt3.x = m1.z; mt3.y = m2.z; mt3.z = m3.z;
 
@@ -278,7 +277,7 @@ void atom_collision_loop_sync(int atom, __global float *pos, __global float *spe
 			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
 			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
 
-			mt1.x = m1.x; mt1.y = m2.x; mt2.z = m3.x;
+			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
 			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
 			mt3.x = m1.z; mt3.y = m2.z; mt3.z = m3.z;
 
