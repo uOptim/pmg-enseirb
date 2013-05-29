@@ -28,4 +28,7 @@ vbo.o: vbo.h atom.h ocl.h
 ocl.o: ocl.h vbo.h atom.h
 
 clean:
-	rm -rf *.o $(PROG)
+	rm -rf *.o
+
+mrproper: clean
+	rm -rf $(PROG)

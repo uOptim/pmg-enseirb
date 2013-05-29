@@ -156,7 +156,7 @@ void ocl_init(cl_device_type device_type, char *program_name)
 	// Create compute context with "device_type" devices
 	//
 	context = clCreateContext (properties, 1, devices + dev, NULL, NULL, &err);
-	check(err, "Failed to create compute context");
+	check(err, "Failed to create compute context\n");
 
 	// Load program source
 	//
@@ -166,7 +166,7 @@ void ocl_init(cl_device_type device_type, char *program_name)
 	// Build program
 	//
 	program = clCreateProgramWithSource(context, 1, &opencl_prog, NULL, &err);
-	check(err, "Failed to create program");
+	check(err, "Failed to create program\n");
 
 	err = clBuildProgram (program, 0, NULL, NULL, NULL, NULL);
 	if (err != CL_SUCCESS) {
