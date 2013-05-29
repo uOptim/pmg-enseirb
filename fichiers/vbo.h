@@ -21,11 +21,11 @@
 // ugly point-based rendering.
 //
 
-#define _SPHERE_MODE_
+//#define _SPHERE_MODE_
 
 typedef enum { SPHERE_SKIN, PACMAN_SKIN } atom_skin_t;
 
-#define MAX_VERTICES   (1024*1024)
+#define MAX_VERTICES   (1024*1024*16)
 
 extern GLfloat vbo_vertex[];
 extern GLfloat vbo_normal[];

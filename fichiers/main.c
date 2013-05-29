@@ -10,6 +10,11 @@
 #include <limits.h>
 #include <float.h>
 #include <string.h>
+#include <time.h>
+
+// t2 - t1 in nano seconds
+#define TIME_DIFF(t1, t2) \
+	((t2.tv_sec - t1.tv_sec) * 1000000000 + (t2.tv_nsec - t1.tv_nsec))
 
 
 GLuint glutWindowHandle = 0;
@@ -112,8 +117,12 @@ void timer(int arg)
 
 void idle(void)
 {
+	struct timespec ts1, ts2;
+	clock_gettime(CLOCK_MONOTONIC, &ts1);
 	animateGPU();
 	glutPostRedisplay();
+	clock_gettime(CLOCK_MONOTONIC, &ts2);
+	printf("Elapsed time : %d ms\n", TIME_DIFF(ts1, ts2) / 1000000);
 }
 
 void initView (float *min_ext, float *max_ext)
