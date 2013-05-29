@@ -123,7 +123,8 @@ void idle(void)
 	animateGPU();
 	glutPostRedisplay();
 	clock_gettime(CLOCK_MONOTONIC, &ts2);
-	printf("Elapsed time : %d ms\n", TIME_DIFF(ts1, ts2) / 1000000);
+	printf("Elapsed time : %lf ms\n",
+	       (double)TIME_DIFF(ts1, ts2) / 1000000.0);
 }
 
 void initView (float *min_ext, float *max_ext)
@@ -244,7 +245,7 @@ void appKeyboard(unsigned char key, int x, int y)
 		case 'C' : detect_collision = 1 - detect_collision;
 				   printf("collision detect: %d\n", detect_collision); break;
 		case '\033': // escape quits
-		case '\015': // Enter quits    
+		case '\015': // Enter quits
 		case 'Q':    // Q quits
 		case 'q':    // q (or escape) quits
 				   // Cleanup up and quit
@@ -311,9 +312,9 @@ int main(int argc, char **argv)
 	/* Read atomic coordinates from an MD-configuration file */
 	initializeAtoms();
 
-  /* With GLUT_DOUBLE, it's impossible to reach more than 60 fps on some
-   * computers
-   */
+	/* With GLUT_DOUBLE, it's impossible to reach more than 60 fps on some
+	 * computers
+	 */
 	unsigned int display_mode = GLUT_RGBA|GLUT_DEPTH;
 	if (full_speed)
 		display_mode = display_mode|GLUT_SINGLE;
