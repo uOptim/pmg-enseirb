@@ -301,7 +301,23 @@ int main(int argc, char **argv)
 	while (argc > 1) {
 		if(!strcmp(*argv, "--full-speed") || !strcmp(*argv, "-fs")) {
 			full_speed = 1;
-		} else
+		}
+		else if(!strcmp(*argv, "--move") || !strcmp(*argv, "-m")) {
+			move_enabled = 1;
+		}
+		else if(!strcmp(*argv, "--collision") || !strcmp(*argv, "-c")) {
+			detect_collision = 1;
+			move_enabled = 1;
+		}
+		else if(!strcmp(*argv, "--gravity") || !strcmp(*argv, "-g")) {
+			gravity_enabled = 1;
+			move_enabled = 1;
+		}
+		else if(!strcmp(*argv, "--leonnard-force") || !strcmp(*argv, "-lf")) {
+			force_enabled = 1;
+			move_enabled = 1;
+		}
+		else
 			break;
 		argc--; argv++;
 	}
