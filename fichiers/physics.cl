@@ -168,55 +168,94 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 	int local_id = get_local_id(0);
 	int global_id = get_group_id(0);
 
-	int i = (int)sqrt(2.0*(global_id+1));
+	int u = (int)sqrt(2.0*(global_id+1));
 
-	if (i * (i+1) / 2 < global_id+1) {
-		i = i + 1;
+	if (u * (u+1) / 2 < global_id+1) {
+		u = u + 1;
 	}
 
-	int x = 16*(i - 1);
-	int y = 16*(global_id - (i-1)*i/2);
-	if (y != 0 || x != 0) {
-		return;
-	}
-
-	//speed[local_id] = 0;
+	int a = 16*(u - 1);
+	int b = 16*(global_id - (u-1)*u/2);
 
 	// fill buffer
-	if (x+local_id < N) {
-		ligne[local_id].x = pos[x + local_id];
-		ligne[local_id].y = pos[x + local_id + ROUND(N)];
-		ligne[local_id].z = pos[x + local_id + 2*ROUND(N)];
+	if (a+local_id < N) {
+		ligne[local_id].x = pos[a + local_id];
+		ligne[local_id].y = pos[a + local_id + ROUND(N)];
+		ligne[local_id].z = pos[a + local_id + 2*ROUND(N)];
 	}
 
-	if (y+local_id < N) {
-		colone[local_id].x = pos[y + local_id];
-		colone[local_id].y = pos[y + local_id + ROUND(N)];
-		colone[local_id].z = pos[y + local_id + 2*ROUND(N)];
+	if (b+local_id < N) {
+		colone[local_id].x = pos[b + local_id];
+		colone[local_id].y = pos[b + local_id + ROUND(N)];
+		colone[local_id].z = pos[b + local_id + 2*ROUND(N)];
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	if (x + local_id > 3) {
-		return;
-	}
+	float3 x, y, z;
+	x.x = 1; x.y = 0; x.z = 0;
+	y.x = 0; y.y = 1; y.z = 0;
+	z.x = 0; z.y = 0; z.z = 1;
 
-	//speed[local_id + ROUND(N)] = 1;
-	//speed[local_id + 2*ROUND(N)] = 0;
+	float3 Ca, Cb, Va, Vb;
+	float3 m1, m2, m3;    // M
+	float3 mt1, mt2, mt3; // tM
+	float3 Var, Vpar;     // V_A_r, V'_A_r
+	float3 Vbr, Vpbr;     // V_B_r, V'_B_r
 
-	int j;
-	for (j = 0; j < 16; j++) {
-		if (x == y && j == local_id) {
+	int t;
+	float3 i, j, k;
+	for (t = 0; t < 16; t++) {
+		if (a == b && t == local_id) {
 			break;
 		}
-		if (distance(ligne[local_id], colone[j]) <= radius) {
-			speed[x + local_id] = 0;
-			speed[x + local_id + ROUND(N)] = 0;
-			speed[x + local_id + 2*ROUND(N)] = 0;
 
-			speed[y + j] = 0;
-			speed[y + j + ROUND(N)] = 0;
-			speed[y + j + 2*ROUND(N)] = 0;
+		Ca.x = pos[a + local_id];
+		Ca.y = pos[a + local_id + ROUND(N)];
+		Ca.z = pos[a + local_id + 2 * ROUND(N)];
+
+		Va.x = speed[a + local_id];
+		Va.y = speed[a + local_id + ROUND(N)];
+		Va.z = speed[a + local_id + 2 * ROUND(N)];
+
+		if (distance(ligne[local_id], colone[t]) <= radius) {
+			Vb.x = speed[t + b];
+			Vb.y = speed[t + b + ROUND(N)];
+			Vb.z = speed[t + b + 2 * ROUND(N)];
+
+			Cb.x = pos[t + b];
+			Cb.y = pos[t + b + ROUND(N)];
+			Cb.z = pos[t + b + 2 * ROUND(N)];
+
+			i = normalize(Ca - Cb);
+			if (i.x == -1) {
+				i.x = 1; // y and j are 0 if x is 1/-1
+			}
+
+			j = normalize(cross(x, i));
+			k = cross(i, j);
+
+			m1 = i;
+			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
+			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
+
+			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
+			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
+			mt3.x = m1.z; mt3.y = m2.z; mt3.z = m3.z;
+
+			Var.x = dot(Va, m1); Var.y = dot(Va, m2); Var.z = dot(Va, m3);
+			Vbr.x = dot(Vb, m1); Vbr.y = dot(Vb, m2); Vbr.z = dot(Vb, m3);
+
+			Vpar = Var; Vpar.x = Vbr.x;
+			Vpbr = Vbr; Vpbr.x = Var.x;
+
+			speed[a + local_id]              = dot(Vpar, mt1);
+			speed[a + local_id + ROUND(N)]   = dot(Vpar, mt2);
+			speed[a + local_id + 2*ROUND(N)] = dot(Vpar, mt3);
+
+			speed[b + t]              = dot(Vpbr, mt1);
+			speed[b + t + ROUND(N)]   = dot(Vpbr, mt2);
+			speed[b + t + 2*ROUND(N)] = dot(Vpbr, mt3);
 		}
 	}
 }
