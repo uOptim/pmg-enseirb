@@ -252,20 +252,24 @@ static void update_position(void)
 static void atom_collision(void)
 {
 	cl_event prof_event;
-	size_t global;											// global domain size for our calculation
-	size_t local;												// local domain size for our calculation
+	size_t local;
+	size_t global;
 	float radius = ATOM_RADIUS;					// collision when closer to atom radius
 
-	// Set the arguments to our compute kernel
-	//
 	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
+	err	 |= clSetKernelArg(atom_col_kernel, 3, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = natoms; // TODO: CHANGE!!!
-	local = 1; // Set workgroup size to 1
+	/* Version 1 et 2
+	size_t global = natoms;
+	size_t local = 1;
+	*/
 
+	/* Version 3 */
+	global = 16*(natoms/16+1)*(natoms/16+2)/2;
+	local = 16;
 
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
