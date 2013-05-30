@@ -27,8 +27,13 @@ vbo.o: vbo.h atom.h ocl.h
 
 ocl.o: ocl.h vbo.h atom.h
 
+# CLEANING
+
+conf_clean:
+	ls *.conf | grep ^[0-9] | xargs rm -f
+
 clean:
 	rm -rf *.o
 
-mrproper: clean
+mrproper: clean conf_clean
 	rm -rf $(PROG)
