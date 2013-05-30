@@ -162,50 +162,63 @@ void atom_collision_v2(__global float *pos, __global float *speed, float radius)
 
 void atom_collision_v3(__global float *pos, __global float *speed, float radius, int N)
 {
-	//__local float3 ligne[2][16];
+	__local float3 ligne[16];
+	__local float3 colone[16];
 
-	/*
 	int local_id = get_local_id(0);
-	int global0 = get_global_id(0);
-	int global1 = get_global_id(1);
+	int global_id = get_group_id(0);
 
-	int x = global0*16 + local_id;
-	int y = global1*16 + local_id;
+	int i = (int)sqrt(2.0*(global_id+1));
+
+	if (i * (i+1) / 2 < global_id+1) {
+		i = i + 1;
+	}
+
+	int x = 16*(i - 1);
+	int y = 16*(global_id - (i-1)*i/2);
+	if (y != 0 || x != 0) {
+		return;
+	}
+
+	//speed[local_id] = 0;
 
 	// fill buffer
-	/*
-	if (x <= N) {
-		ligne[local_id].x  = pos[x];
-		ligne[local_id].y  = pos[x + ROUND(N)];
-		ligne[local_id].z  = pos[x + 2*ROUND(N)];
+	if (x+local_id < N) {
+		ligne[local_id].x = pos[x + local_id];
+		ligne[local_id].y = pos[x + local_id + ROUND(N)];
+		ligne[local_id].z = pos[x + local_id + 2*ROUND(N)];
 	}
 
-	if (y <= N) {
-		colone[local_id].x = pos[y];
-		colone[local_id].y = pos[y + ROUND(N)];
-		colone[local_id].z = pos[y + 2*ROUND(N)];
+	if (y+local_id < N) {
+		colone[local_id].x = pos[y + local_id];
+		colone[local_id].y = pos[y + local_id + ROUND(N)];
+		colone[local_id].z = pos[y + local_id + 2*ROUND(N)];
 	}
-	*/
 
-	//barrier(CLK_LOCAL_MEM_FENCE);
+	barrier(CLK_LOCAL_MEM_FENCE);
 
-	/*
-	int i;
-	for (i = 0; i < 16; i++) {
-		speed[global0*16 + local_id] = 0;
-		speed[global0*16 + local_id + ROUND(N)] = 0;
-		speed[global0*16 + local_id + 2*ROUND(N)] = 0;
-		//if (distance(colone[i], ligne[j]) <= radius) {
-			speed[global0*16 + i] = 0;
-			speed[global0*16 + i + ROUND(N)] = 0;
-			speed[global0*16 + i + 2*ROUND(N)] = 0;
-
-			speed[global1*16 + i] = 0;
-			speed[global1*16 + i + ROUND(N)] = 0;
-			speed[global1*16 + i + 2*ROUND(N)] = 0;
-		//}
+	if (x + local_id > 3) {
+		return;
 	}
-	*/
+
+	//speed[local_id + ROUND(N)] = 1;
+	//speed[local_id + 2*ROUND(N)] = 0;
+
+	int j;
+	for (j = 0; j < 16; j++) {
+		if (x == y && j == local_id) {
+			break;
+		}
+		if (distance(ligne[local_id], colone[j]) <= radius) {
+			speed[x + local_id] = 0;
+			speed[x + local_id + ROUND(N)] = 0;
+			speed[x + local_id + 2*ROUND(N)] = 0;
+
+			speed[y + j] = 0;
+			speed[y + j + ROUND(N)] = 0;
+			speed[y + j + 2*ROUND(N)] = 0;
+		}
+	}
 }
 
 __kernel

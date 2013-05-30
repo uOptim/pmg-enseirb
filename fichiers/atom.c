@@ -252,6 +252,8 @@ static void update_position(void)
 static void atom_collision(void)
 {
 	cl_event prof_event;
+	size_t local;
+	size_t global;
 	float radius = ATOM_RADIUS;					// collision when closer to atom radius
 
 	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
@@ -266,10 +268,10 @@ static void atom_collision(void)
 	*/
 
 	/* Version 3 */
-	size_t global = (natoms/16+1)*(natoms/16+1);
-	size_t local = 1;
+	global = 16*(natoms/16+1)*(natoms/16+2)/2;
+	local = 16;
 
-	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 2, NULL, global, &local, 0, NULL, &prof_event);
+	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
 }
 
