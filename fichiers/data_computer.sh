@@ -8,7 +8,7 @@ PARAMETERS=${@:2}
 
 # Launching atoms
 # stdbuf -oO ensure that there's no buffer in the output of ./atoms
-stdbuf -o0 ./atoms --full-speed ${PARAMETERS} ${CONF_FILE} | egrep -o "[0-9]+\.[0-9]+" >${FILE} &
+stdbuf -o0 ./atoms --full-speed ${PARAMETERS} ${CONF_FILE} | stdbuf -i0 egrep -o "[0-9]+\.[0-9]+" >${FILE} &
 # Letting atoms run during specified time
 sleep ${RUN_TIME}
 killall atoms
