@@ -184,7 +184,8 @@ void initializeComputeDevices(void)
 	ocl_kernelCreate("move_vertices", &move_vertices_kernel);
 	ocl_kernelCreate("update_position", &update_position_kernel);
 	ocl_kernelCreate("border_collision", &border_col_kernel);
-	ocl_kernelCreate("atom_collision", &atom_col_kernel);
+	//ocl_kernelCreate("atom_collision", &atom_col_kernel);
+	ocl_kernelCreate("atom_collision_v3", &atom_col_kernel);
 	ocl_kernelCreate("lennard_jones", &atom_force_kernel);
 	ocl_kernelCreate("gravity", &gravity_kernel);
 }
@@ -252,22 +253,31 @@ static void update_position(void)
 static void atom_collision(void)
 {
 	cl_event prof_event;
-	size_t global;											// global domain size for our calculation
-	size_t local;												// local domain size for our calculation
 	float radius = ATOM_RADIUS;					// collision when closer to atom radius
 
-	// Set the arguments to our compute kernel
-	//
+	/* Version 1 et 2
 	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = natoms; // TODO: CHANGE!!!
-	local = 1; // Set workgroup size to 1
-
-
+	size_t global = natoms;
+	size_t local = 1;
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
+	/**/
+
+	/* Version 3 */
+	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
+	err	 |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
+	err	 |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
+	err	 |= clSetKernelArg(atom_col_kernel, 3, sizeof(int), &natoms);
+	check(err, "Failed to set kernel arguments! %d\n", err);
+
+	size_t global[2] = {natoms/16, natoms/16};
+	size_t local[1] = {16};
+	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, global, local, 0, NULL, &prof_event);
+	/**/
+
 	check(err, "Failed to execute kernel!\n");
 }
 

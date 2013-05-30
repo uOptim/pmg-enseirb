@@ -159,6 +159,46 @@ void atom_collision_v2(__global float *pos, __global float *speed, float radius)
 	}
 }
 
+
+__kernel
+void atom_collision_v3(__global float *pos, __global float *speed, float radius, int N)
+{
+	int local_id = get_local_id(0);
+	int global0 = get_global_id(0);
+	int global1 = get_global_id(1);
+
+	__local float3 ligne[16];
+	__local float3 colone[16];
+
+	// fill buffer
+	ligne[local_id].x  = pos[global0*16 + local_id];
+	ligne[local_id].y  = pos[global0*16 + local_id + ROUND(N)];
+	ligne[local_id].z  = pos[global0*16 + local_id + 2*ROUND(N)];
+	colone[local_id].x = pos[global1*16 + local_id];
+	colone[local_id].y = pos[global1*16 + local_id + ROUND(N)];
+	colone[local_id].z = pos[global1*16 + local_id + 2*ROUND(N)];
+
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	int i;
+	for (i = 0; i < 16; i++) {
+		speed[global0*16 + local_id] = 0;
+		speed[global0*16 + local_id + ROUND(N)] = 0;
+		speed[global0*16 + local_id + 2*ROUND(N)] = 0;
+		//if (distance(colone[i], ligne[j]) <= radius) {
+		/*
+			speed[global0*16 + i] = 0;
+			speed[global0*16 + i + ROUND(N)] = 0;
+			speed[global0*16 + i + 2*ROUND(N)] = 0;
+
+			speed[global1*16 + i] = 0;
+			speed[global1*16 + i + ROUND(N)] = 0;
+			speed[global1*16 + i + 2*ROUND(N)] = 0;
+		*/
+		//}
+	}
+}
+
 __kernel
 void atom_collision(__global float *pos, __global float *speed, float radius)
 {
