@@ -1,11 +1,14 @@
 #!/bin/bash
 # Run a simulation during a certain amount of time and print the average
 # time for a step
-CONF_FILE="bounce.conf"
+CONF_FILE=$1
 RUN_TIME=5
 FILE="execution_time"
+PARAMETERS=${@:2}
+
 # Launching atoms
-./atoms --full-speed ${CONF_FILE} | egrep -o "[0-9]\.[0-9]+" >${FILE} &
+# stdbuf -oO ensure that there's no buffer in the output of ./atoms
+stdbuf -o0 ./atoms --full-speed ${PARAMETERS} ${CONF_FILE} | egrep -o "[0-9]+\.[0-9]+" >${FILE} &
 # Letting atoms run during specified time
 sleep ${RUN_TIME}
 killall atoms
