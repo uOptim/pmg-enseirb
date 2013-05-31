@@ -61,17 +61,11 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 	}
 }
 
+
 void atom_collision_loop(int atom, __global float *pos, __global float *speed, int N, float coldist)
 {
-	int a;
-
-	float d;
-	float3 i, j, k;
 	float3 Ca, Cb;
-
-	Ca.x = pos[atom];
-	Ca.y = pos[atom + ROUND(N)];
-	Ca.z = pos[atom + 2 * ROUND(N)];
+	float3 i, j, k;
 
 	float3 x, y, z;
 	x.x = 1; x.y = 0; x.z = 0;
@@ -84,18 +78,21 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 	float3 Var, Vpar;     // V_A_r, V'_A_r
 	float3 Vbr, Vpbr;     // V_B_r, V'_B_r
 
+	Ca.x = pos[atom];
+	Ca.y = pos[atom + ROUND(N)];
+	Ca.z = pos[atom + 2 * ROUND(N)];
+
 	Va.x = speed[atom];
 	Va.y = speed[atom + ROUND(N)];
 	Va.z = speed[atom + 2 * ROUND(N)];
 
+	int a;
 	for (a = 0; a < atom; a++) {
 		Cb.x = pos[a];
 		Cb.y = pos[a + ROUND(N)];
 		Cb.z = pos[a + 2 * ROUND(N)];
 
-		d = distance(Ca, Cb);
-
-		if (d <= coldist) {
+		if (distance(Ca, Cb) <= coldist) {
 			Vb.x = speed[a];
 			Vb.y = speed[a + ROUND(N)];
 			Vb.z = speed[a + 2 * ROUND(N)];
@@ -107,7 +104,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 
 			m1 = i;
 			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
-			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
+			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x);        m3.z = (i.x + (i.y * i.y)/(1 + i.x));
 
 			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
 			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
@@ -162,8 +159,8 @@ void atom_collision_v2(__global float *pos, __global float *speed, float radius)
 
 void atom_collision_v3(__global float *pos, __global float *speed, float radius, int N)
 {
-	__local float3 ligne[16];
 	__local float3 colone[16];
+	__local float3 colone_speed[16];
 
 	int local_id = get_local_id(0);
 	int global_id = get_group_id(0);
@@ -178,26 +175,31 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 	int b = 16*(global_id - (u-1)*u/2);
 
 	// fill buffer
-	if (a+local_id < N) {
-		ligne[local_id].x = pos[a + local_id];
-		ligne[local_id].y = pos[a + local_id + ROUND(N)];
-		ligne[local_id].z = pos[a + local_id + 2*ROUND(N)];
-	}
-
 	if (b+local_id < N) {
 		colone[local_id].x = pos[b + local_id];
 		colone[local_id].y = pos[b + local_id + ROUND(N)];
 		colone[local_id].z = pos[b + local_id + 2*ROUND(N)];
+		colone_speed[local_id].x = speed[b + local_id];
+		colone_speed[local_id].y = speed[b + local_id + ROUND(N)];
+		colone_speed[local_id].z = speed[b + local_id + 2*ROUND(N)];
 	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
+
+
+	float3 Ca, Cb, Va, Vb;
+	Ca.x = pos[a + local_id];
+	Ca.y = pos[a + local_id + ROUND(N)];
+	Ca.z = pos[a + local_id + 2*ROUND(N)];
+	Va.x = speed[a + local_id];
+	Va.y = speed[a + local_id + ROUND(N)];
+	Va.z = speed[a + local_id + 2*ROUND(N)];
 
 	float3 x, y, z;
 	x.x = 1; x.y = 0; x.z = 0;
 	y.x = 0; y.y = 1; y.z = 0;
 	z.x = 0; z.y = 0; z.z = 1;
 
-	float3 Ca, Cb, Va, Vb;
 	float3 m1, m2, m3;    // M
 	float3 mt1, mt2, mt3; // tM
 	float3 Var, Vpar;     // V_A_r, V'_A_r
@@ -206,28 +208,18 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 	int t;
 	float3 i, j, k;
 	for (t = 0; t < 16; t++) {
+
 		if (a == b && t == local_id) {
 			break;
 		}
 
-		Ca.x = pos[a + local_id];
-		Ca.y = pos[a + local_id + ROUND(N)];
-		Ca.z = pos[a + local_id + 2 * ROUND(N)];
+		Cb = colone[t];
+		Vb = colone_speed[t];
 
-		Va.x = speed[a + local_id];
-		Va.y = speed[a + local_id + ROUND(N)];
-		Va.z = speed[a + local_id + 2 * ROUND(N)];
-
-		if (distance(ligne[local_id], colone[t]) <= radius) {
-			Vb.x = speed[t + b];
-			Vb.y = speed[t + b + ROUND(N)];
-			Vb.z = speed[t + b + 2 * ROUND(N)];
-
-			Cb.x = pos[t + b];
-			Cb.y = pos[t + b + ROUND(N)];
-			Cb.z = pos[t + b + 2 * ROUND(N)];
+		if (distance(Ca, Cb) <= 2*radius) {
 
 			i = normalize(Ca - Cb);
+
 			if (i.x == -1) {
 				i.x = 1; // y and j are 0 if x is 1/-1
 			}

@@ -9,6 +9,7 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
+#include <sys/time.h>
 
 char *MD_FILE = "default.conf";
 
@@ -256,23 +257,31 @@ static void atom_collision(void)
 	size_t global;
 	float radius = ATOM_RADIUS;					// collision when closer to atom radius
 
+
 	err	 = clSetKernelArg(atom_col_kernel, 0, sizeof(cl_mem), &pos_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 1, sizeof(cl_mem), &speed_buffer);
 	err	 |= clSetKernelArg(atom_col_kernel, 2, sizeof(float), &radius);
 	err	 |= clSetKernelArg(atom_col_kernel, 3, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	/* Version 1 et 2
-	size_t global = natoms;
-	size_t local = 1;
-	*/
+	/* Version 1 et 2 */
+	//global = natoms;
+	//local = 1;
 
 	/* Version 3 */
 	global = 16*(natoms/16+1)*(natoms/16+2)/2;
 	local = 16;
 
+	// The clock is ticking!!
+	struct timeval tv1, tv2;
+	gettimeofday(&tv1, NULL);
+
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
+	clFinish(queue);
+
+	gettimeofday(&tv2, NULL);
+	printf("collision kernel time : %lf ms\n", (double)TIME_DIFF(tv1, tv2) / 1000.0);
 }
 
 #define SLICE_SIZE 16
@@ -301,8 +310,16 @@ static void atom_force(void)
 	local = SLICE_SIZE;
 	//*/
 
+	// The clock is ticking!!
+	struct timeval tv1, tv2;
+	gettimeofday(&tv1, NULL);
+
 	err = clEnqueueNDRangeKernel(queue, atom_force_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
+	clFinish(queue);
+
+	gettimeofday(&tv2, NULL);
+	printf("force kernel time : %lf ms\n", (double)TIME_DIFF(tv1, tv2) / 1000.0);
 }
 
 static void gravity(void)
@@ -319,8 +336,8 @@ static void gravity(void)
 	err	 |= clSetKernelArg(gravity_kernel, 2, sizeof(float), &g);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	global = natoms; // TODO: CHANGE!!!
-	local = 1; // Set workgroup size to 1
+	global = natoms;
+	local = 1;
 
 	err = clEnqueueNDRangeKernel(queue, gravity_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
