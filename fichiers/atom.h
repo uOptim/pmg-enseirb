@@ -34,4 +34,10 @@ void resetAnimation(void);
 void zeroSpeeds(void);
 void atomFinalize(void);
 
+
+// t2 - t1 in nano seconds
+#define TIME_DIFF(t1, t2) \
+	((t2.tv_sec - t1.tv_sec) * 1000000000 + (t2.tv_nsec - t1.tv_nsec))
+
+
 #endif

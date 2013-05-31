@@ -64,15 +64,8 @@ void border_collision(__global float *pos, __global float *speed, __constant flo
 
 void atom_collision_loop(int atom, __global float *pos, __global float *speed, int N, float coldist)
 {
-	int a;
-
-	float d;
-	float3 i, j, k;
 	float3 Ca, Cb;
-
-	Ca.x = pos[atom];
-	Ca.y = pos[atom + ROUND(N)];
-	Ca.z = pos[atom + 2 * ROUND(N)];
+	float3 i, j, k;
 
 	float3 x, y, z;
 	x.x = 1; x.y = 0; x.z = 0;
@@ -85,18 +78,21 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 	float3 Var, Vpar;     // V_A_r, V'_A_r
 	float3 Vbr, Vpbr;     // V_B_r, V'_B_r
 
+	Ca.x = pos[atom];
+	Ca.y = pos[atom + ROUND(N)];
+	Ca.z = pos[atom + 2 * ROUND(N)];
+
 	Va.x = speed[atom];
 	Va.y = speed[atom + ROUND(N)];
 	Va.z = speed[atom + 2 * ROUND(N)];
 
+	int a;
 	for (a = 0; a < atom; a++) {
 		Cb.x = pos[a];
 		Cb.y = pos[a + ROUND(N)];
 		Cb.z = pos[a + 2 * ROUND(N)];
 
-		d = distance(Ca, Cb);
-
-		if (d <= coldist) {
+		if (distance(Ca, Cb) <= coldist) {
 			Vb.x = speed[a];
 			Vb.y = speed[a + ROUND(N)];
 			Vb.z = speed[a + 2 * ROUND(N)];
@@ -108,7 +104,7 @@ void atom_collision_loop(int atom, __global float *pos, __global float *speed, i
 
 			m1 = i;
 			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
-			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
+			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x);        m3.z = (i.x + (i.y * i.y)/(1 + i.x));
 
 			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
 			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
@@ -179,12 +175,14 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 	int b = 16*(global_id - (u-1)*u/2);
 
 	// fill buffer
-	colone[local_id].x = pos[b + local_id];
-	colone[local_id].y = pos[b + local_id + ROUND(N)];
-	colone[local_id].z = pos[b + local_id + 2*ROUND(N)];
-	colone_speed[local_id].x = speed[b + local_id];
-	colone_speed[local_id].y = speed[b + local_id + ROUND(N)];
-	colone_speed[local_id].z = speed[b + local_id + 2*ROUND(N)];
+	if (b+local_id < N) {
+		colone[local_id].x = pos[b + local_id];
+		colone[local_id].y = pos[b + local_id + ROUND(N)];
+		colone[local_id].z = pos[b + local_id + 2*ROUND(N)];
+		colone_speed[local_id].x = speed[b + local_id];
+		colone_speed[local_id].y = speed[b + local_id + ROUND(N)];
+		colone_speed[local_id].z = speed[b + local_id + 2*ROUND(N)];
+	}
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -209,7 +207,11 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 
 	int t;
 	float3 i, j, k;
-	for (t = 0; t < local_id; t++) {
+	for (t = 0; t < 16; t++) {
+
+		if (a == b && t == local_id) {
+			break;
+		}
 
 		Cb = colone[t];
 		Vb = colone_speed[t];
