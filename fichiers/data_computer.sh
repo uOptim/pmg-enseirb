@@ -2,7 +2,7 @@
 # Run a simulation during a certain amount of time and print the average
 # time for a step
 CONF_FILE=$1
-RUN_TIME=5
+RUN_TIME=2
 FILE="execution_time"
 PARAMETERS=${@:2}
 
