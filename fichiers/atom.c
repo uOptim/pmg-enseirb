@@ -285,6 +285,7 @@ static void atom_collision(void)
 }
 
 #define SLICE_SIZE 16
+#define LENNARD_JONES_VERSION 2
 
 static void atom_force(void)
 {
@@ -301,15 +302,14 @@ static void atom_force(void)
 	err	 |= clSetKernelArg(atom_force_kernel, 3, sizeof(int), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	/* V1
+#if LENNARD_JONES_VERSION == 1
 	global = natoms;
 	local = 1; // Set workgroup size to 1
-	//*/
-	/* V2*/
+#endif
+#if LENNARD_JONES_VERSION == 2
 	global = ROUND(natoms);
 	local = SLICE_SIZE;
-	//*/
-
+#endif
 	// The clock is ticking!!
 	struct timeval tv1, tv2;
 	gettimeofday(&tv1, NULL);
