@@ -256,8 +256,8 @@ __kernel
 void atom_collision(__global float *pos, __global float *speed, float radius, int N)
 {
 	//atom_collision_v1(pos, speed, radius);
-	atom_collision_v2(pos, speed, radius);
-	//atom_collision_v3(pos, speed, radius, N);
+	//atom_collision_v2(pos, speed, radius);
+	atom_collision_v3(pos, speed, radius, N);
 }
 
 __kernel
