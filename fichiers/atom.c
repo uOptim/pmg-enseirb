@@ -9,7 +9,7 @@
 #include <math.h>
 #include <limits.h>
 #include <float.h>
-#include <time.h>
+#include <sys/time.h>
 
 char *MD_FILE = "default.conf";
 
@@ -273,14 +273,15 @@ static void atom_collision(void)
 	local = 16;
 
 	// The clock is ticking!!
-	struct timespec ts1, ts2;
-	clock_gettime(CLOCK_MONOTONIC, &ts1);
+	struct timeval tv1, tv2;
+	gettimeofday(&tv1, NULL);
 
 	err = clEnqueueNDRangeKernel(queue, atom_col_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
+	clFinish(queue);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts2);
-	printf("collision kernel time : %lf ms\n", (double)TIME_DIFF(ts1, ts2) / 1000000.0);
+	gettimeofday(&tv2, NULL);
+	printf("collision kernel time : %lf ms\n", (double)TIME_DIFF(tv1, tv2) / 1000.0);
 }
 
 static void atom_force(void)
@@ -301,14 +302,15 @@ static void atom_force(void)
 	local = 1; // Set workgroup size to 1
 
 	// The clock is ticking!!
-	struct timespec ts1, ts2;
-	clock_gettime(CLOCK_MONOTONIC, &ts1);
+	struct timeval tv1, tv2;
+	gettimeofday(&tv1, NULL);
 
 	err = clEnqueueNDRangeKernel(queue, atom_force_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
+	clFinish(queue);
 
-	clock_gettime(CLOCK_MONOTONIC, &ts2);
-	printf("force kernel time : %lf ms\n", (double)TIME_DIFF(ts1, ts2) / 1000000.0);
+	gettimeofday(&tv2, NULL);
+	printf("force kernel time : %lf ms\n", (double)TIME_DIFF(tv1, tv2) / 1000.0);
 }
 
 static void gravity(void)

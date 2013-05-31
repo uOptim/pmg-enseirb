@@ -35,9 +35,9 @@ void zeroSpeeds(void);
 void atomFinalize(void);
 
 
-// t2 - t1 in nano seconds
+// t2 - t1 in micro seconds
 #define TIME_DIFF(t1, t2) \
-	((t2.tv_sec - t1.tv_sec) * 1000000000 + (t2.tv_nsec - t1.tv_nsec))
+	((t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec))
 
 
 #endif
