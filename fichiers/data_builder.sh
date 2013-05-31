@@ -18,7 +18,7 @@ function run_simulation {
     do
         AVG_TIME=$(./data_computer.sh $k.conf $@ )
         echo $k $AVG_TIME
-        k=$(( $k * $STEP_MULT))
+        k=$(( $k + $STEP_MULT))
     done
 }
 
@@ -30,7 +30,7 @@ do
     then
         python3 file_generator.py $k > $k.conf
     fi
-    k=$(( $k * $STEP_MULT))
+    k=$(( $k + $STEP_MULT))
 done
 
 

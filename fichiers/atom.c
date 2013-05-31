@@ -265,12 +265,12 @@ static void atom_collision(void)
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
 	/* Version 1 et 2 */
-	//global = natoms;
-	//local = 1;
+	global = natoms;
+	local = 1;
 
 	/* Version 3 */
-	global = 16*(natoms/16+1)*(natoms/16+2)/2;
-	local = 16;
+	//global = 16*(natoms/16+1)*(natoms/16+2)/2;
+	//local = 16;
 
 	// The clock is ticking!!
 	struct timeval tv1, tv2;

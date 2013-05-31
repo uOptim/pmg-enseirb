@@ -256,8 +256,8 @@ __kernel
 void atom_collision(__global float *pos, __global float *speed, float radius, int N)
 {
 	//atom_collision_v1(pos, speed, radius);
-	//atom_collision_v2(pos, speed, radius);
-	atom_collision_v3(pos, speed, radius, N);
+	atom_collision_v2(pos, speed, radius);
+	//atom_collision_v3(pos, speed, radius, N);
 }
 
 __kernel
@@ -405,80 +405,3 @@ void lennard_jones(__global float *pos, __global float *speed, float radius, int
 #endif
 }
 
-// Work in progress
-void atom_collision_loop_sync(int atom, __global float *pos, __global float *speed, int N, float coldist)
-{
-	int a;
-
-	float d;
-	float3 i, j, k;
-	float3 Ca, Cb;
-
-	Ca.x = pos[atom];
-	Ca.y = pos[atom + ROUND(N)];
-	Ca.z = pos[atom + 2 * ROUND(N)];
-
-	float3 x, y, z;
-	x.x = 1; x.y = 0; x.z = 0;
-	y.x = 0; y.y = 1; y.z = 0;
-	z.x = 0; z.y = 0; z.z = 1;
-
-	float3 Va, Vb, deltaV;
-	float3 m1, m2, m3;    // M
-	float3 mt1, mt2, mt3; // tM
-	float3 Var, Vpar;     // V_A_r, V'_A_r
-	float3 Vbr, Vpbr;     // V_B_r, V'_B_r
-
-	Va.x = speed[atom];
-	Va.y = speed[atom + ROUND(N)];
-	Va.z = speed[atom + 2 * ROUND(N)];
-
-	deltaV.x += 0;
-	deltaV.y += 0;
-	deltaV.z += 0;
-
-	for (a = 0; a < N; a++) {
-		if (a == atom)
-			continue;
-		Cb.x = pos[a];
-		Cb.y = pos[a + ROUND(N)];
-		Cb.z = pos[a + 2 * ROUND(N)];
-
-		d = distance(Ca, Cb);
-
-		if (d <= coldist) {
-			Vb.x = speed[a];
-			Vb.y = speed[a + ROUND(N)];
-			Vb.z = speed[a + 2 * ROUND(N)];
-
-			i = normalize(Ca - Cb);
-			if (i.x == -1) i.x = 1;// y and j are 0 if x is 1/-1
-			j = normalize(cross(x, i));
-			k = cross(i, j);
-
-			m1 = i;
-			m2.x = -i.y; m2.y = (i.x + (i.z * i.z)/(1 + i.x)); m2.z = (-i.y * i.z)/(1 + i.x);
-			m3.x = -i.z; m3.y = (-i.y * i.z)/(1 + i.x) ; m3.z = (i.x + (i.y * i.y)/(1 + i.x));
-
-			mt1.x = m1.x; mt1.y = m2.x; mt1.z = m3.x;
-			mt2.x = m1.y; mt2.y = m2.y; mt2.z = m3.y;
-			mt3.x = m1.z; mt3.y = m2.z; mt3.z = m3.z;
-
-			Var.x = dot(Va, m1); Var.y = dot(Va, m2); Var.z = dot(Va, m3);
-			Vbr.x = dot(Vb, m1); Vbr.y = dot(Vb, m2); Vbr.z = dot(Vb, m3);
-
-			Vpar = Var; Vpar.x = Vbr.x;
-			Vpbr = Vbr; Vpbr.x = Var.x;
-
-			deltaV.x += dot(Vpar, mt1) - Va.x;
-			deltaV.y += dot(Vpar, mt2) - Va.y;
-			deltaV.z += dot(Vpar, mt3) - Va.z;
-		}
-	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-	speed[atom]              += deltaV.x;
-	speed[atom + ROUND(N)]   += deltaV.y;
-	speed[atom + 2*ROUND(N)] += deltaV.z;
-}
