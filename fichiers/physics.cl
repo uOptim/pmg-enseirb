@@ -277,8 +277,7 @@ void gravity(__global float *pos, __global float *speed, float g)
 	speed[atom + ROUND(N)] -= g;
 }
 
-__kernel
-void lennard_jones(__global float *pos, __global float *speed, float radius)
+void lennard_jones_v1(__global float *pos, __global float *speed, float radius)
 {
 	int N = get_global_size(0);
 	int atom = get_global_id(0);
@@ -317,11 +316,104 @@ void lennard_jones(__global float *pos, __global float *speed, float radius)
 		speedDelta.z += diff.z * energy;
 	}
 
-	barrier(CLK_LOCAL_MEM_FENCE);
-
 	speed[atom] += speedDelta.x;
 	speed[atom + ROUND(N)] += speedDelta.y;
 	speed[atom + 2 * ROUND(N)] += speedDelta.z;
+}
+
+#define SLICE_SIZE 16
+
+void lennard_jones_v2(__global float *pos, __global float *speed, float radius, int nb_atoms)
+{
+
+  __local float3 next_atoms[SLICE_SIZE];
+
+	int group_id = get_group_id(0);
+  int global_id = get_global_id(0);
+	int local_id = get_local_id(0);
+  int nb_slices = (nb_atoms - 1) / 16 + 1;
+
+  float3 my_atom;
+  if (global_id < nb_atoms){
+    my_atom.x = pos[global_id];
+    my_atom.y = pos[global_id + ROUND(nb_atoms)];
+    my_atom.z = pos[global_id + 2 * ROUND(nb_atoms)];
+  }
+
+  if (my_atom.y != 2.5)
+    speed[global_id + ROUND(nb_atoms)] = 1;
+
+  if (my_atom.z != 2.5)
+    speed[global_id + 2 * ROUND(nb_atoms)] = 1;
+
+	float3 speedDelta;
+
+	speedDelta.x = 0;
+	speedDelta.y = 0;
+	speedDelta.z = 0;
+
+	int slice_no, j;
+	for (slice_no = 0; slice_no < nb_slices; slice_no++) {
+
+    // Loading an atom for workgroup
+    int to_load_id = slice_no * SLICE_SIZE + local_id;
+    if (to_load_id < nb_atoms){
+      next_atoms[local_id].x = pos[to_load_id];
+      next_atoms[local_id].y = pos[to_load_id + ROUND(nb_atoms)];
+      next_atoms[local_id].z = pos[to_load_id + 2 * ROUND(nb_atoms)];
+    }
+
+    // Waiting all threads to load
+    barrier(CLK_LOCAL_MEM_FENCE);
+
+    // Computing speed deltas for this slice
+    if (global_id < nb_atoms){
+      // Computing speed deltas
+      for (j = 0; j < SLICE_SIZE; j++){
+        int opposite_atom_id = slice_no * SLICE_SIZE + j;
+        // not computing with non-existing atoms
+        if (opposite_atom_id >= nb_atoms)
+          break;
+        //not applying force on himself
+        if (opposite_atom_id == local_id)
+          continue;
+
+        double d = distance(my_atom, next_atoms[j]);
+
+        float tmp = SIGMA / d;
+
+        float energy = 4 * EPSILON * (pow(tmp,12) - pow(tmp,6));
+
+				float3 diff = normalize(my_atom - next_atoms[j]);
+
+        speedDelta.x += diff.x * energy;
+        speedDelta.y += diff.y * energy;
+        speedDelta.z += diff.z * energy;
+      }
+    }
+
+    // Waiting all threads before starting next slice
+    barrier(CLK_LOCAL_MEM_FENCE);
+	}
+
+  // Applying speed_deltats
+  if (global_id < nb_atoms){
+    speed[global_id] += speedDelta.x;
+    speed[global_id + ROUND(nb_atoms)] += speedDelta.y;
+    speed[global_id + 2 * ROUND(nb_atoms)] += speedDelta.z;
+  }
+}
+
+#define LENNARD_JONES_VERSION 2
+
+__kernel
+void lennard_jones(__global float *pos, __global float *speed, float radius, int nb_atoms){
+#if LENNARD_JONES_VERSION == 1
+  lennard_jones_v1(pos, speed, radius);
+#endif
+#if LENNARD_JONES_VERSION == 2
+  lennard_jones_v2(pos, speed, radius, nb_atoms);
+#endif
 }
 
 // Work in progress

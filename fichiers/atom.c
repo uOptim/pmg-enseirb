@@ -275,6 +275,8 @@ static void atom_collision(void)
 	check(err, "Failed to execute kernel!\n");
 }
 
+#define SLICE_SIZE 16
+
 static void atom_force(void)
 {
 	cl_event prof_event;
@@ -287,10 +289,17 @@ static void atom_force(void)
 	err	 = clSetKernelArg(atom_force_kernel, 0, sizeof(cl_mem), &pos_buffer);
 	err	 |= clSetKernelArg(atom_force_kernel, 1, sizeof(cl_mem), &speed_buffer);
 	err	 |= clSetKernelArg(atom_force_kernel, 2, sizeof(float), &radius);
+	err	 |= clSetKernelArg(atom_force_kernel, 3, sizeof(int), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
+	/* V1
 	global = natoms;
 	local = 1; // Set workgroup size to 1
+	//*/
+	/* V2*/
+	global = ROUND(natoms);
+	local = SLICE_SIZE;
+	//*/
 
 	err = clEnqueueNDRangeKernel(queue, atom_force_kernel, 1, NULL, &global, &local, 0, NULL, &prof_event);
 	check(err, "Failed to execute kernel!\n");
