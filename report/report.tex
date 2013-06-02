@@ -136,14 +136,43 @@ rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
     \node [red, scale=10] at (26,\nbthreads -25) {2};
   \end{tikzpicture}
 }
+\paragraph{}
+On peut voir dans ce schéma que chaque workgroup n'aura besoin de la mémoire
+que de $2 * SLICE\_SIZE$ atomes pour couvrir $SLICE\_SIZE^2$ collisions de plus
+un avantage est que la mémoire est à chaque fois contiguë, il n'y a donc en
+réalité que deux accès mémoire nécessaires. À l'intérieur de chaque workgroup,
+un thread calculera uniquement les collisions sur sa ligne. Chaque thread
+calculera donc $SLICE\_SIZE$ collisions au maximum.
 \subsubsection{Calcul de la position en fonction du group id}
+Afin de pouvoir respecter la répartition en workgroups présentée ci-dessus, il
+est nécessaire de pouvoir retrouver la position d'un groupe à partir de l'id du
+groupe. Afin d'obtenir la ligne, il est nécessaire de trouver le premier $l$ tel
+que $l* (l+1) < g$ avec $g$ le numéro du groupe.
+\paragraph{}
+Si l'on définit la position du groupe par $(x,y)$ avec $x$ la ligne et $y$ la
+colonne on peut effectuer le raisonnement suivant :
+$$\frac{(x-1) * x}{2} < g \leq \frac{x * (x+1)}{2}$$
+$$(x-1) * x < 2g \leq x * (x+1)$$
+$$(x-1)^2 < 2d \leq (x+1)^2$$
+$$x-1 < \sqrt{2d} \leq (x+1)$$
+\paragraph{}
+L'utilisation de cette racine permet donc de rapidement réduire les possibilités
+à deux candidats pour le numéro de la ligne, il est donc ensuite facile de
+déterminer le numéro de la ligne
+
 \subsubsection{Complexité}
-Nombre de threads élevé, mais calcul de la racine carrée... à voir si en
-changeant la slice on améliore les résultats
+Cette démarche nous assure non seulement un nombre de threads élevé, mais aussi
+de la mémoire partagée à l'intérieur du workgroup, de façon à réduire le nombre
+d'accès mémoire par collision. Cependant, chaque thread doit commencer par
+effectuer la racine carrée d'un nombre de l'ordre du carré du nombre d'atomes,
+cette opération ne s'effectuant pas forcément en temps constante, elle
+représente une partie importante du temps d'exécution si chaque thread contrôle
+peu de collisions.
 \subsubsection{En faisant varier la slice}
 Tests à faire..
 
 \subsection{Lennard Jones v2}
+
 
 \subsection{Génération de fichiers pour les atomes}
 Blabla sur le fichier de génération python : espace grand pour éviter la
