@@ -7,10 +7,7 @@ all: ${OBJECTS}
 
 
 clean:
-	rm *.log
-	rm *.aux
-	rm *.out
-	rm *.toc
+	rm -f *.log *.aux *.out *.toc
 
 mrproper: clean
-	rm *.pdf
+	rm -f *.pdf

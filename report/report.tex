@@ -10,6 +10,7 @@
 \usepackage{float}
 \usepackage{hyperref}
 \usepackage{geometry}
+\usepackage{tikz}
 
 \geometry{margin=2cm}
 
@@ -110,8 +111,31 @@ la mesure du temps.
 \subsection{Collision v3}
 Afin de d'optimiser l'exécution de la fonction collision, nous avons cherché à
 rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
+
 \subsubsection{Répartition des workgroups/threads}
-tikz pour schéma?
+\resizebox{\columnwidth}{!}{
+  \begin{tikzpicture}[font=\Large]
+    \pgfmathsetmacro{\nbthreads}{32}
+    \pgfmathsetmacro{\wgsize}{16}
+    %collision rectangles
+    \foreach \x in {2, ..., \nbthreads} {
+      \foreach \y in {2, ..., \x} {
+        \draw [ultra thick] (\y, \nbthreads - \x) rectangle (\y + 1, \nbthreads - \x - 1);
+      }
+    }
+    % threads numbers
+    \foreach \x in {1, ..., \nbthreads} {
+      \node at (1.5 , \nbthreads - 0.5 - \x) {\x};
+    }
+    % work rectangles
+    \draw [red] (2, \nbthreads - 1) rectangle ( 18, \nbthreads - 1 - \wgsize);
+    \draw [red] (2, \nbthreads - 17) rectangle ( 18, \nbthreads - 17 - \wgsize);
+    \draw [red] (18, \nbthreads - 17) rectangle ( 34, \nbthreads - 17 - \wgsize);
+    \node [red, scale=10] at (10,\nbthreads -9) {0};
+    \node [red, scale=10] at (10,\nbthreads -25) {1};
+    \node [red, scale=10] at (26,\nbthreads -25) {2};
+  \end{tikzpicture}
+}
 \subsubsection{Calcul de la position en fonction du group id}
 \subsubsection{Complexité}
 Nombre de threads élevé, mais calcul de la racine carrée... à voir si en
