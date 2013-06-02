@@ -69,14 +69,49 @@
 \section{Développement et difficultés rencontrées}
 
 \subsection{Division par zéro dans le cas des collisions}
-Blabla à propos de l'équation qui donne une division par zéro
+
+\paragraph{}
+Un des premiers problèmes auxquels nous avons du faire face se situait dans le
+noyau \verb!collision!. En effet, lors de l'exécution de la configuration
+\verb!bounce.conf!, si la collision était activée dès le début, le
+comportement obtenu correspondait à nos attentes, mais si nous laissions les
+atomes se traverser une fois avant d'activer la collision, les deux atomes
+disparaissaient lors de la collision.
+
+\paragraph{}
+En nous penchant plus en détail sur ce problème, nous nous sommes aperçus que le
+problème venait du fait qu'à plusieurs endroits de l'équation, on divisait un
+élément par $1 + i.x$. Or, dans le cas évoqué ci-dessus, $i.x = -1$, on effectue
+donc une division par zéro. Pour pallier ce problème, nous avons simplement
+traité ce cas en inversant le vecteur de distance dans ce cas précis.
 
 \subsection{Mise en place de la mesure}
-Blabla à propos de l'emplacement de la mesure de vsync etc.
+\paragraph{}
+Pour mesurer le temps d'exécution, nous avons essayé de mesurer celui-ci en
+effectuant la différence entre le temps au début de la fonction idle et à la
+fin de celle-ci, ceci afin de mesurer réellement le nombre d'image par seconde.
+\paragraph{}
+Cette première méthode nous a posé problème étant donné que nous avions un temps
+minimal d'environ 16 millisecondes, ce quelque soit les modes et le nombre
+d'atomes utilisés. Le temps de 16 millisecondes correspondant étrangement avec
+60 images par seconde, nous avons eu un axe pour la recherche du problème, nous
+avons rapidement pu déterminer deux sources possibles, la présence d'une
+synchronisation verticale et l'utilisation du double buffer. Si nous ne sommes
+pas parvenu à enlever la synchronisation verticale, l'utilisation du simple
+buffer nous a permis de dépasser les 60 images par secondes et d'avoir ainsi des
+mesures plus intéressantes.
+\paragraph{}
+Étant donné que le rendu graphique n'était que secondaire, nous avons finalement
+dérivé sur des mesures de temps avant et après les
+\verb!clEnqueueNDRangeKernel!. Afin que la tâche soit réellement mesurée, il
+a aussi été nécessaire que nous imposions un \verb!clFinish! avant de prendre
+la mesure du temps.
 
 \subsection{Collision v3}
-Intro à colli v3
+Afin de d'optimiser l'exécution de la fonction collision, nous avons cherché à
+rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
 \subsubsection{Répartition des workgroups/threads}
+tikz pour schéma?
 \subsubsection{Calcul de la position en fonction du group id}
 \subsubsection{Complexité}
 Nombre de threads élevé, mais calcul de la racine carrée... à voir si en
@@ -89,6 +124,8 @@ Tests à faire..
 \subsection{Génération de fichiers pour les atomes}
 Blabla sur le fichier de génération python : espace grand pour éviter la
 diffusion des atomes sur lennard Jones
+
+\subsection{Script de mesure de performances}
 
 \section{Performances mesurées}
 
