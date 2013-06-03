@@ -2,7 +2,7 @@ OBJECTS=report.pdf
 
 all: ${OBJECTS}
 
-%.pdf: %.tex
+%.pdf: %.tex clean
 	pdflatex $< && pdflatex $<
 
 

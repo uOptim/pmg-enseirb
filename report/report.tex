@@ -113,6 +113,8 @@ rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
 
 \subsubsection{Répartition des workgroups/threads}
 \begin{figure}
+  \caption{Répartition des workgroups pour collision\_v3}
+  \label{collision-v3}
   \resizebox{\columnwidth}{!}{
     \begin{tikzpicture}[font=\Large]
       \pgfmathsetmacro{\nbthreads}{32}
@@ -136,11 +138,9 @@ rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
       \node [red, scale=10] at (26,\nbthreads -25) {2};
     \end{tikzpicture}
   }
-  \caption{Répartition des workgroups pour collision\_v3}
-  \label{collision_v3}
 \end{figure}
 \paragraph{}
-On peut voir dans ce schéma \cite{collison_v3}
+On peut voir dans ce schéma \ref{collision-v3}
  que chaque workgroup n'aura besoin de la mémoire
 que de $2 * SLICE\_SIZE$ atomes pour couvrir $SLICE\_SIZE^2$ collisions de plus
 un avantage est que la mémoire est à chaque fois contiguë, il n'y a donc en
@@ -182,13 +182,19 @@ symétrie de la situation. En effet, cela nous obligerait à mettre en place des
 mécanismes permettant d'éviter une écriture concurrentielle, le coût engendré
 par ces attentes serait plus élevé que le gain qu'il apporterait.
 En revanche, il est parfaitement possible d'utiliser le partage de la mémoire
-par des groupes de thread, en opérant par tranche.
-%tikz?
+par des groupes de thread, en opérant par tranche. Et en imposant une barrière
+locale à chaque fin de tranche et après chaque chargement de tranche.
+Chaque thread continue donc à calculer les forces pour une seule ligne, mais le
+partage de la mémoire permet d'économiser de parallèliser le chargement et donc
+d'économiser du temps. \ref{lennard-jones-v2}
 \begin{figure}
+  \caption{Organisation des workgroups pour Lennard-Jones v2}
+  \label{lennard-jones-v2}
   \resizebox{\columnwidth}{!}{
     \begin{tikzpicture}[font=\Large]
-      \pgfmathsetmacro{\nbthreads}{32}
+      \pgfmathsetmacro{\nbthreads}{64}
       \pgfmathsetmacro{\wgsize}{16}
+      \pgfmathsetmacro{\nbgroups}{\nbthreads / \wgsize}
       %force rectangles
       \foreach \x in {1, ..., \nbthreads} {
         \foreach \y in {1, ..., \nbthreads} {
@@ -200,21 +206,22 @@ par des groupes de thread, en opérant par tranche.
         \node at (0.5 , \nbthreads - 0.5 - \x) {\x};
       }
       % work rectangles
-      \foreach \x in {0, 16} {
-        \draw [red] (\nbthreads + 1, \x - 1) rectangle ( 1, \x + 15);
+      \foreach \x in {1, 17, ..., \nbthreads} {
+        \draw [red] (\nbthreads + 1, \x - 2) rectangle ( 1, \x + 14);
       }
       % barriers
-      \foreach \y in {1,17,33} {
-        \draw [violet, line width=6] (\y, -1) -- (\y, \nbthreads -1);
+      \foreach \y in {0,16, ...,\nbthreads} {
+        \draw [violet, line width=6] (\y + 1, -1) -- (\y + 1, \nbthreads -1);
         % text to add
       }
-      \node [red, scale=10] at (10,\nbthreads -9) {0};
-      \node [red, scale=10] at (10,\nbthreads -25) {1};
-      \node [red, scale=10] at (26,\nbthreads -25) {2};
+      % Workgroup text
+      \foreach \x [evaluate=\x as \currentIndex using {int(\nbgroups - \x)}] in {1, ..., \nbgroups} {
+        \foreach \y in {1, ..., \nbgroups} {
+          \node [red, scale=10] at (\y * \wgsize - 7, \x * \wgsize - 8) {\currentIndex};
+        }
+      }
     \end{tikzpicture}
   }
-  \caption{Organisation des tâches}
-  \label{lennard-jones-v2}
 \end{figure}
 
 
@@ -228,9 +235,9 @@ diffusion des atomes sur lennard Jones
 
 \subsection{Cas de la fonction collision}
 \begin{figure}[h]
-	\includegraphics[width=\textwidth]{figures/collision.png}
 	\caption{Comparaison des trois versions pour le noyau collision (élastiques)}
 	\label{collisions}
+	\includegraphics[width=\textwidth]{figures/collision.png}
 \end{figure}
 
 Les performances sont comparées en figure \ref{collisions}. La différence entre la première et la seconde version est très faible. Bien
@@ -242,9 +249,9 @@ net et d'un facteur dix.
 \subsection{Cas du calcul des forces de Lennard-Jones}
 
 \begin{figure}[h]
-	\includegraphics[width=\textwidth]{figures/lennard.png}
 	\caption{Comparaison des deux versions pour le noyau force}
 	\label{lennard}
+	\includegraphics[width=\textwidth]{figures/lennard.png}
 \end{figure}
 
 \section{Conclusion}
