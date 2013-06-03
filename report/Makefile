@@ -2,7 +2,10 @@ OBJECTS=report.pdf
 
 all: ${OBJECTS}
 
-%.pdf: %.tex clean
+figures/collision.png: comparaison_collision.gnuplot
+	gnuplot $<
+
+%.pdf: %.tex clean figures/collision.png
 	pdflatex $< && pdflatex $<
 
 
