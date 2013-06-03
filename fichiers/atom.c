@@ -13,7 +13,7 @@
 
 char *MD_FILE = "default.conf";
 
-#define ALIGN     16
+#define ALIGN     64
 #define ROUND(n)  (((size_t)(n)+ALIGN-1)&(~(size_t)(ALIGN-1)))
 
 #define x_atom(a) (atom_pos.x[a])
@@ -264,13 +264,16 @@ static void atom_collision(void)
 	err	 |= clSetKernelArg(atom_col_kernel, 3, sizeof(natoms), &natoms);
 	check(err, "Failed to set kernel arguments! %d\n", err);
 
-	/* Version 1 et 2 */
-	//global = natoms;
-	//local = 1;
+#define COLLISION_VERSION 3
+#define COLLISION_SLICE_SIZE ALIGN
 
-	/* Version 3 */
-	global = 16*(natoms/16+1)*(natoms/16+2)/2;
-	local = 16;
+#if COLLISION_VERSION < 3
+	global = natoms;
+	local = 1;
+#else
+	global = COLLISION_SLICE_SIZE*(natoms/COLLISION_SLICE_SIZE+1)*(natoms/COLLISION_SLICE_SIZE+2)/2;
+	local = COLLISION_SLICE_SIZE;
+#endif
 
 	// The clock is ticking!!
 	struct timeval tv1, tv2;
@@ -284,7 +287,7 @@ static void atom_collision(void)
 	printf("collision kernel time : %lf ms\n", (double)TIME_DIFF(tv1, tv2) / 1000.0);
 }
 
-#define SLICE_SIZE 16
+#define FORCE_SLICE_SIZE ALIGN
 #define LENNARD_JONES_VERSION 2
 
 static void atom_force(void)
@@ -308,7 +311,7 @@ static void atom_force(void)
 #endif
 #if LENNARD_JONES_VERSION == 2
 	global = ROUND(natoms);
-	local = SLICE_SIZE;
+	local = FORCE_SLICE_SIZE;
 #endif
 	// The clock is ticking!!
 	struct timeval tv1, tv2;
