@@ -62,6 +62,7 @@
 \thispagestyle{empty}
 \pagebreak
 \tableofcontents
+\listoffigures
 \newpage
 
 \section{Introduction}
@@ -140,8 +141,8 @@ rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
   }
 \end{figure}
 \paragraph{}
-On peut voir dans ce schéma \ref{collision-v3}
- que chaque workgroup n'aura besoin de la mémoire
+On peut voir dans le schéma suivant (figure~\ref{collision-v3})
+que chaque workgroup n'aura besoin de la mémoire
 que de $2 * SLICE\_SIZE$ atomes pour couvrir $SLICE\_SIZE^2$ collisions de plus
 un avantage est que la mémoire est à chaque fois contiguë, il n'y a donc en
 réalité que deux accès mémoire nécessaires. À l'intérieur de chaque workgroup,
@@ -226,10 +227,25 @@ d'économiser du temps. \ref{lennard-jones-v2}
 
 
 \subsection{Génération de fichiers pour les atomes}
-Blabla sur le fichier de génération python : espace grand pour éviter la
-diffusion des atomes sur lennard Jones
+Afin de pouvoir tester notre programme sur un très grand nombre d'atomes, nous
+avons écrit un script python permettant de générer un fichier contenant un
+nombre d'atomes spécifié à l'utilisation. Les positions et vitesse de ceux-ci
+sont générés aléatoirement dans l'espace défini. Nous avons volontairement
+choisi de fonctionner dans un très grand espace, car si des atomes commencent
+trop proches l'un de l'autre, la force de répulsion qu'ils subissent les fait
+totalement sortir de la zone dans laquelle ils ont commencé et ils ne sont
+ensuite plus pris en compte pour le calcul, ce qui fausse le temps d'exécution.
 
 \subsection{Script de mesure de performances}
+Afin de simplifier la mesure des performances, nous avons choisi d'utiliser des
+scripts bash pour lancer des séries de simulation. L'un sert à lancer une seule
+simulation en capturant les temps d'exécution de chaque pas et en calculant leur
+moyenne. L'autre permet de lancer le même test avec différents nombre d'atomes
+afin de pouvoir facilement tracer un graphique ensuite.
+\paragraph{}
+Afin que l'exécution du programme commence directement avec certaines options,
+nous avons modifié le code source du main en ajoutant d'autres options avec une
+démarche semblable à celle utilisée pour l'option \verb!--full_speed!.
 
 \section{Performances mesurées}
 
