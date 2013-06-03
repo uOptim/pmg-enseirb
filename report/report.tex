@@ -250,26 +250,41 @@ démarche semblable à celle utilisée pour l'option \verb!--full_speed!.
 \section{Performances mesurées}
 
 \subsection{Cas de la fonction collision}
-\begin{figure}[h]
+\begin{figure}[ht]
 	\caption{Comparaison des trois versions pour le noyau collision (élastiques)}
-	\label{collisions}
-	\includegraphics[width=\textwidth]{figures/collision.png}
+	\label{collisions-versions}
+	\includegraphics[width=\textwidth]{figures/collision_versions.png}
+\end{figure}
+\begin{figure}[ht]
+	\caption{Comparaison des différentes slices(collision)}
+	\label{collisions-slices}
+	\includegraphics[width=\textwidth]{figures/collision_slices.png}
 \end{figure}
 
-Les performances sont comparées en figure \ref{collisions}. La différence entre la première et la seconde version est très faible. Bien
+Les performances sont comparées en figure \ref{collisions-versions}. La différence entre la première et la seconde version est très faible. Bien
 que dans la seconde version le travail donné à chaque thread est plus
 équitable, leur nombre est deux fois plus faible que dans la première version.
 En revanche, le gain du préchargement réalisé dans la troisième version est
 net et d'un facteur dix.
+\paragraph{}
+Nous avons aussi observé une grande différence de performance en
+changeant la taille des slices utilisées pour la troisième version
+de l'implémentation.\ref{collisions-slices}
 
 \subsection{Cas du calcul des forces de Lennard-Jones}
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\caption{Comparaison des deux versions pour le noyau force}
-	\label{lennard}
-	\includegraphics[width=\textwidth]{figures/lennard.png}
+	\label{lennard-versions}
+	\includegraphics[width=\textwidth]{figures/lennard_versions.png}
 \end{figure}
 
+
+\begin{figure}[ht]
+	\caption{Comparaison des deux versions pour le noyau force}
+	\label{lennard-slices}
+	\includegraphics[width=\textwidth]{figures/lennard_slices.png}
+\end{figure}
 \section{Conclusion}
 
 \end{document}
