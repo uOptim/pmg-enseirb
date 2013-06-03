@@ -1,6 +1,6 @@
 #pragma OPENCL EXTENSION all : enable
 
-#define ALIGN     16
+#define ALIGN     64
 #define ROUND(n)  (((size_t)(n)+ALIGN-1)&(~(size_t)(ALIGN-1)))
 
 #define SIGMA 1.25
@@ -156,11 +156,11 @@ void atom_collision_v2(__global float *pos, __global float *speed, float radius)
 	}
 }
 
-
+#define COLLISION_SLICE_SIZE ALIGN
 void atom_collision_v3(__global float *pos, __global float *speed, float radius, int N)
 {
-	__local float3 colone[16];
-	__local float3 colone_speed[16];
+	__local float3 colone[COLLISION_SLICE_SIZE];
+	__local float3 colone_speed[COLLISION_SLICE_SIZE];
 
 	int local_id = get_local_id(0);
 	int global_id = get_group_id(0);
@@ -171,8 +171,8 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 		u = u + 1;
 	}
 
-	int a = 16*(u - 1);
-	int b = 16*(global_id - (u-1)*u/2);
+	int a = COLLISION_SLICE_SIZE*(u - 1);
+	int b = COLLISION_SLICE_SIZE*(global_id - (u-1)*u/2);
 
 	// fill buffer
 	if (b+local_id < N) {
@@ -207,7 +207,7 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 
 	int t;
 	float3 i, j, k;
-	for (t = 0; t < 16; t++) {
+	for (t = 0; t < COLLISION_SLICE_SIZE; t++) {
 
 		if (a == b && t == local_id) {
 			break;
@@ -313,12 +313,12 @@ void lennard_jones_v1(__global float *pos, __global float *speed, float radius)
 	speed[atom + 2 * ROUND(N)] += speedDelta.z;
 }
 
-#define SLICE_SIZE 16
+#define FORCE_SLICE_SIZE ALIGN
 
 void lennard_jones_v2(__global float *pos, __global float *speed, float radius, int nb_atoms)
 {
 
-	__local float3 next_atoms[SLICE_SIZE];
+	__local float3 next_atoms[FORCE_SLICE_SIZE];
 
 	int group_id = get_group_id(0);
 	int global_id = get_global_id(0);
@@ -342,7 +342,7 @@ void lennard_jones_v2(__global float *pos, __global float *speed, float radius, 
 	for (slice_no = 0; slice_no < nb_slices; slice_no++) {
 
 		// Loading an atom for workgroup
-		int to_load_id = slice_no * SLICE_SIZE + local_id;
+		int to_load_id = slice_no * FORCE_SLICE_SIZE + local_id;
 		if (to_load_id < nb_atoms){
 			next_atoms[local_id].x = pos[to_load_id];
 			next_atoms[local_id].y = pos[to_load_id + ROUND(nb_atoms)];
@@ -355,8 +355,8 @@ void lennard_jones_v2(__global float *pos, __global float *speed, float radius, 
 		// Computing speed deltas for this slice
 		if (global_id < nb_atoms){
 			// Computing speed deltas
-			for (j = 0; j < SLICE_SIZE; j++){
-				int opposite_atom_id = slice_no * SLICE_SIZE + j;
+			for (j = 0; j < FORCE_SLICE_SIZE; j++){
+				int opposite_atom_id = slice_no * FORCE_SLICE_SIZE + j;
 				// not computing with non-existing atoms
 				if (opposite_atom_id >= nb_atoms)
 					break;
