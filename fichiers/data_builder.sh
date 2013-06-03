@@ -10,7 +10,7 @@ STEP_MULT=$3
 
 PARAMETERS=${@:4}
 
-#run_simulation(dest_file, params
+#run_simulation(params)
 function run_simulation {
     k=$KINIT
     # TODO review condition
