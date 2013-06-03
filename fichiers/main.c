@@ -318,14 +318,7 @@ int main(int argc, char **argv)
 	/* Read atomic coordinates from an MD-configuration file */
 	initializeAtoms();
 
-	/* With GLUT_DOUBLE, it's impossible to reach more than 60 fps on some
-	 * computers
-	 */
-	unsigned int display_mode = GLUT_RGBA|GLUT_DEPTH;
-	if (full_speed)
-		display_mode = display_mode|GLUT_SINGLE;
-	else
-		display_mode = display_mode|GLUT_DOUBLE;
+	unsigned int display_mode = GLUT_RGBA|GLUT_DEPTH|GLUT_DOUBLE;
 	/* Set up an window */
 	/* Initialize display mode */
 	glutInitDisplayMode(display_mode);
