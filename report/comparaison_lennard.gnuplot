@@ -9,4 +9,4 @@ set terminal png size 1024,768
 set output "figures/lennard_versions.png"
 
 plot '../results/lennard_v1.dat'    with lines title "Lennard-Jones v1",\
-     '../results/lennard_v2_16.dat' with lines title "Lennard-Jones v2"
+     '../results/lennard_v2.dat' with lines title "Lennard-Jones v2"
