@@ -1,7 +1,7 @@
 set title "Comparaison des performances entres diverses implémentations du noyau collision"
 
 set xlabel "Nombre d'atomes"
-set ylabel "Temps d'exécution moyen du kernel"
+set ylabel "Temps d'exécution moyen du kernel (en ms)"
 
 set tics out
 

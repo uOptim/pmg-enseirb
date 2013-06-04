@@ -1,7 +1,7 @@
 set title "Comparaison des performances entres différentes taille de slices pour la troisième version du noyau collision"
 
 set xlabel "Nombre d'atomes"
-set ylabel "Temps d'exécution moyen du kernel"
+set ylabel "Temps d'exécution moyen du kernel (en ms)"
 
 set tics out
 
