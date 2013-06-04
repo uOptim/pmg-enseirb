@@ -66,6 +66,11 @@
 \newpage
 
 \section{Introduction}
+Le but de ce projet qui s'inscrit dans le cadre du cours de programmation
+multicoeur et GPU est de concevoir une application de simulation de
+particules en utilisant openCL. Une visualisation de la situation en temps
+réel utilisant OpenGL nous a été fournie afin que nous puissions concentrer
+nos efforts sur l'accélération des calculs en OpenCL.
 
 \section{Développement et difficultés rencontrées}
 
@@ -113,7 +118,7 @@ Afin de d'optimiser l'exécution de la fonction collision, nous avons cherché �
 rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
 
 \subsubsection{Répartition des workgroups/threads}
-\begin{figure}
+\begin{figure}[p]
   \caption{Répartition des workgroups pour collision\_v3}
   \label{collision-v3}
   \resizebox{\columnwidth}{!}{
@@ -141,13 +146,16 @@ rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
   }
 \end{figure}
 \paragraph{}
+Afin de simplifier la notation, on notera par la suite la taille d'un
+workgroup par $WG\_SIZE$.
+\paragraph{}
 On peut voir dans le schéma suivant (figure~\ref{collision-v3})
 que chaque workgroup n'aura besoin de la mémoire
-que de $2 * SLICE\_SIZE$ atomes pour couvrir $SLICE\_SIZE^2$ collisions de plus
+que de $2 * WG\_SIZE$ atomes pour couvrir $WG\_SIZE^2$ collisions de plus
 un avantage est que la mémoire est à chaque fois contiguë, il n'y a donc en
 réalité que deux accès mémoire nécessaires. À l'intérieur de chaque workgroup,
 un thread calculera uniquement les collisions sur sa ligne. Chaque thread
-calculera donc $SLICE\_SIZE$ collisions au maximum.
+calculera donc $WG\_SIZE$ collisions au maximum.
 \subsubsection{Calcul de la position en fonction du group id}
 Afin de pouvoir respecter la répartition en workgroups présentée ci-dessus, il
 est nécessaire de pouvoir retrouver la position d'un groupe à partir de l'id du
@@ -173,13 +181,15 @@ effectuer la racine carrée d'un nombre de l'ordre du carré du nombre d'atomes,
 cette opération ne s'effectuant pas forcément en temps constante, elle
 représente une partie importante du temps d'exécution si chaque thread contrôle
 peu de collisions.
-\subsubsection{En faisant varier la slice}
-Le nombre de threads dépendant de $n^2$ dans cette implémentation, il semble
-naturel qu'avec une slice trop petite, le nombre de threads sera trop élevé par
-rapport à la longueur de leur tâche. Il nous a donc semblé intéressant
-d'observer l'évolution du temps d'exécution en changeant la taille de la slice.
-À cette fin, nous avons calqué la taille de notre slice sur l'alignement donné
-en macro.
+\subsubsection{En faisant varier la taille des workgroups}
+Le nombre de threads dépendant de $(n/ WG\_SIZE)^2$ dans cette implémentation,
+il semble naturel qu'avec un $WG\_SIZE$ trop petit, le nombre de threads sera
+trop élevé par rapport à la longueur de la tâche. Il nous a donc semblé
+intéressant d'observer l'évolution du temps d'exécution en changeant la valeur
+de $WG\_SIZE$.
+\paragraph{}
+À cette fin, nous avons calqué $WG\_SIZE$ sur l'alignement donné en macro et
+nous avons ensuite modifié cette valeur.
 
 \subsection{Lennard Jones v2}
 Dans le cas du calcul des forces avec la méthode de Lennard-Jones, il n'est pas
@@ -193,7 +203,7 @@ locale à chaque fin de tranche et après chaque chargement de tranche.
 Chaque thread continue donc à calculer les forces pour une seule ligne, mais le
 partage de la mémoire permet d'économiser de parallèliser le chargement et donc
 d'économiser du temps. \ref{lennard-jones-v2}
-\begin{figure}
+\begin{figure}[p]
   \caption{Organisation des workgroups pour Lennard-Jones v2}
   \label{lennard-jones-v2}
   \resizebox{\columnwidth}{!}{
@@ -232,8 +242,8 @@ d'économiser du temps. \ref{lennard-jones-v2}
 \end{figure}
 \paragraph{}
 Comme pour la troisième version des collisions, nous avons décidé ici aussi de
-laisser la possibilité de changer la taille des slices, celles-ci étant toujours
-égale à l'alignement.
+laisser la possibilité de changer la taille des workgroups, celle-ci étant
+toujours égale à l'alignement.
 
 \subsection{Génération de fichiers pour les atomes}
 Afin de pouvoir tester notre programme sur un très grand nombre d'atomes, nous
@@ -259,13 +269,13 @@ démarche semblable à celle utilisée pour l'option \verb!--full_speed!.
 \section{Performances mesurées}
 
 \subsection{Cas de la fonction collision}
-\begin{figure}[ht]
+\begin{figure}[p]
 	\caption{Collisions : Comparaison des versions}
 	\label{collisions-versions}
 	\includegraphics[width=\textwidth]{figures/collision_versions.png}
 \end{figure}
-\begin{figure}[ht]
-	\caption{Collisions V3 : Comparaison des slices}
+\begin{figure}[p]
+	\caption{Collisions V3 : Comparaison des tailles de workgroup}
 	\label{collisions-slices}
 	\includegraphics[width=\textwidth]{figures/collision_slices.png}
 \end{figure}
@@ -277,17 +287,19 @@ En revanche, le gain du préchargement réalisé dans la troisième version est
 net et d'un facteur dix.
 \paragraph{}
 Nous avons aussi observé une grande différence de performance en
-changeant la taille des slices utilisées pour la troisième version
-de l'implémentation.\ref{collisions-slices}%TODO more text
+changeant la taille de workgroup utilisée pour la troisième version
+de l'implémentation (voir figure~\ref{collisions-slices}). On peut par
+ailleurs observer une augmentation par palier lorsque la taille du groupe est
+de 256.
 
 \subsection{Cas du calcul des forces de Lennard-Jones}
 
 Les performances des deux versions de Lennard-Jones sont comparées en figure
 \ref{lennard-versions}. La différence entre les deux versions est très nette,
 le facteur de temps étant de plus de 10 lorsque l'on approche des 2500 atomes.
-Pour cette comparaisons, il est important de noter que nous avons utilisé la
-slice par défaut, c'est à dire 16.
-\begin{figure}[htb]
+Pour cette comparaison, il est important de noter que nous avons utilisé la
+taille de workgroup par défaut, c'est à dire 16.
+\begin{figure}[p]
 	\caption{Lennard-Jones : Comparaison des versions}
 	\label{lennard-versions}
 	\includegraphics[width=\textwidth]{figures/lennard_versions.png}
@@ -295,18 +307,18 @@ slice par défaut, c'est à dire 16.
 \paragraph{}
 Dans la figure \ref{lennard-slices}, nous avons uniquement cherché à évaluer les
 performances de la seconde version de Lennard-Jones en fonction de la taille de
-slice utilisée. Le graphique obtenu permet de visualiser principalement deux
+workgroup utilisée. Le graphique obtenu permet de visualiser principalement deux
 informations intéressantes.
 \paragraph{Gain de performances~:}
 La première information visible est qu'il y a un gain significatif de
-performance en augmentant la taille de la slice, cela peut être facilement
+performance en augmentant la taille du workgroup, cela peut être facilement
 compris par le fait que l'on ne dépasse pas la mémoire disponible par workgroup
 tout en diminuant fortement le nombre de barrières. Cela peut aussi être du au
 fait que le nombre de workgroups demandés ne dépasse le nombre de workgroups
 possibles en simultané.
 \paragraph{Irrégularité des courbes obtenues~:}
 Le meilleur exemple de cet aspect réside dans les augmentations soudaines du
-temps d'exécution pour la version avec des slices de 16 atomes. En effet, on
+temps d'exécution pour la version avec des workgroups de 16. En effet, on
 voit ces augmentations soudaines aux environs de 1000, 2000, 3000 et 4000
 \footnote{Notre pas de mesure étant de 100, il paraît raisonnable de supposer
 que ces pics se situent en réalité à 1024, 2048, 3072 et 4096.}. Une explication
@@ -319,25 +331,47 @@ lorsque 65 workgroups sont demandés pour 64 places, il faudra qu'au moins une
 des places soit occupées par 2 workgroups}
 $$
   \begin{tabular}{rcl||c|c|c}
-    &nb\_atoms&& slice = 16 & slice = 64 & slice = 256\\
+    &nb\_atoms&  & WG\_SIZE = 16 & WG\_SIZE = 64 & WG\_SIZE = 256\\
     \hline \hline
-       1&-&1028  &      1     &      1     &       1  \\
-    1029&-&2056  &      2     &      1     &       1  \\
-    2057&-&3072  &      3     &      1     &       1  \\
-    3073&-&4096  &      4     &      1     &       1  \\
-    4097&-&...   &      5     &      2     &       1
+       1&-&1028  &       1       &       1       &       1       \\
+    1029&-&2056  &       2       &       1       &       1       \\
+    2057&-&3072  &       3       &       1       &       1       \\
+    3073&-&4096  &       4       &       1       &       1       \\
+    4097&-&...   &       5       &       2       &       1
   \end{tabular}
 $$
 Le résultat obtenu est donc cohérent au vu de l'augmentation soudaine entre
-4000 et 4100 pour la version avec des slices de taille 64. En revanche, cette
-explication ne permet pas de comprendre l'évolution du temps d'exécution pour
-une taille de slice de 256 qui reste pour nous assez mystérieuse.
+4000 et 4100 pour la version avec des workgroups de taille 64. En revanche,
+cette explication ne permet pas de comprendre l'évolution du temps d'exécution
+pour une taille de workgroup de 256, celle-ci reste pour nous assez mystérieuse.
 
-\begin{figure}[htb]
-	\caption{Lennard-Jones V2 : Comparaison des slices}
+\begin{figure}[p]
+	\caption{Lennard-Jones V2 : Comparaison de la taille des workgroups}
 	\label{lennard-slices}
 	\includegraphics[width=\textwidth]{figures/lennard_slices.png}
 \end{figure}
+
+\section{Perspectives}
+Bien que nous ayons pu essayer différentes implémentations des différents
+noyaux et que nous ayons pu estimer leur performances en fonction de la
+taille de workgroup choisie, il serait intéressant de comparer notre
+implémentation de collision qui est un peu particulière avec une version ou
+chaque thread parcourt une ligne entière.
+\paragraph{}
+Un autre point intéressant pourrait être de valider la théorie que nous avons
+émise à propos des changement brutaux de temps d'exécution
+\footnote{cf figure \ref{lennard-slices}} et de chercher à expliquer ceux
+que nous ne comprenons pas encore.
+
 \section{Conclusion}
+Au cours de ce projet, nous avons pu appréhender les difficultés propres à la
+programmation sur GPU. En particulier, nous avons pu apprendre l'importance
+du partage de la mémoire et l'impact du choix des workgroups dans ce type de
+programmation. De plus nous avons pu expérimenter l'importance du choix de la
+taille des workgroups. S'il est mieux de choisir classiquement une taille de
+16 afin d'assurer des bons résultats avec tout type de carte graphique, il
+nous paraît à présent assez clair que si l'on sait sur quel GPU notre code
+est sensé tourner, il est intéressant d'effectuer quelques tests afin de
+déterminer la taille de workgroup idéale pour un problème donné.
 
 \end{document}
