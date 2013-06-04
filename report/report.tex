@@ -174,7 +174,12 @@ cette opération ne s'effectuant pas forcément en temps constante, elle
 représente une partie importante du temps d'exécution si chaque thread contrôle
 peu de collisions.
 \subsubsection{En faisant varier la slice}
-Tests à faire..
+Le nombre de threads dépendant de $n^2$ dans cette implémentation, il semble
+naturel qu'avec une slice trop petite, le nombre de threads sera trop élevé par
+rapport à la longueur de leur tâche. Il nous a donc semblé intéressant
+d'observer l'évolution du temps d'exécution en changeant la taille de la slice.
+À cette fin, nous avons calqué la taille de notre slice sur l'alignement donné
+en macro.
 
 \subsection{Lennard Jones v2}
 Dans le cas du calcul des forces avec la méthode de Lennard-Jones, il n'est pas
@@ -213,6 +218,7 @@ d'économiser du temps. \ref{lennard-jones-v2}
       % barriers
       \foreach \y in {0,16, ...,\nbthreads} {
         \draw [violet, line width=6] (\y + 1, -1) -- (\y + 1, \nbthreads -1);
+        \node [violet, scale=5] at (\y + 0.5, \nbthreads) {barrier};
         % text to add
       }
       % Workgroup text
@@ -224,7 +230,10 @@ d'économiser du temps. \ref{lennard-jones-v2}
     \end{tikzpicture}
   }
 \end{figure}
-
+\paragraph{}
+Comme pour la troisième version des collisions, nous avons décidé ici aussi de
+laisser la possibilité de changer la taille des slices, celles-ci étant toujours
+égale à l'alignement.
 
 \subsection{Génération de fichiers pour les atomes}
 Afin de pouvoir tester notre programme sur un très grand nombre d'atomes, nous
@@ -269,18 +278,62 @@ net et d'un facteur dix.
 \paragraph{}
 Nous avons aussi observé une grande différence de performance en
 changeant la taille des slices utilisées pour la troisième version
-de l'implémentation.\ref{collisions-slices}
+de l'implémentation.\ref{collisions-slices}%TODO more text
 
 \subsection{Cas du calcul des forces de Lennard-Jones}
 
-\begin{figure}[ht]
+Les performances des deux versions de Lennard-Jones sont comparées en figure
+\ref{lennard-versions}. La différence entre les deux versions est très nette,
+le facteur de temps étant de plus de 10 lorsque l'on approche des 2500 atomes.
+Pour cette comparaisons, il est important de noter que nous avons utilisé la
+slice par défaut, c'est à dire 16.
+\begin{figure}[htb]
 	\caption{Lennard-Jones : Comparaison des versions}
 	\label{lennard-versions}
 	\includegraphics[width=\textwidth]{figures/lennard_versions.png}
 \end{figure}
+\paragraph{}
+Dans la figure \ref{lennard-slices}, nous avons uniquement cherché à évaluer les
+performances de la seconde version de Lennard-Jones en fonction de la taille de
+slice utilisée. Le graphique obtenu permet de visualiser principalement deux
+informations intéressantes.
+\paragraph{Gain de performances~:}
+La première information visible est qu'il y a un gain significatif de
+performance en augmentant la taille de la slice, cela peut être facilement
+compris par le fait que l'on ne dépasse pas la mémoire disponible par workgroup
+tout en diminuant fortement le nombre de barrières. Cela peut aussi être du au
+fait que le nombre de workgroups demandés ne dépasse le nombre de workgroups
+possibles en simultané.
+\paragraph{Irrégularité des courbes obtenues~:}
+Le meilleur exemple de cet aspect réside dans les augmentations soudaines du
+temps d'exécution pour la version avec des slices de 16 atomes. En effet, on
+voit ces augmentations soudaines aux environs de 1000, 2000, 3000 et 4000
+\footnote{Notre pas de mesure étant de 100, il paraît raisonnable de supposer
+que ces pics se situent en réalité à 1024, 2048, 3072 et 4096.}. Une explication
+possible est que les cartes graphiques utilisées disposent de 64 workgroups
+différents. En effet, dans ce cas, on obtient $64 * 16 = 1028$. Ce raisonnement
+mène au tableau suivant :
+\footnote{Ce tableau affiche le nombre minimal de workgroups qui devront se
+partager une même unité de workgroup pour un certain nombre donné, par exemple,
+lorsque 65 workgroups sont demandés pour 64 places, il faudra qu'au moins une
+des places soit occupées par 2 workgroups}
+$$
+  \begin{tabular}{rcl||c|c|c}
+    &nb\_atoms&& slice = 16 & slice = 64 & slice = 256\\
+    \hline \hline
+       1&-&1028  &      1     &      1     &       1  \\
+    1029&-&2056  &      2     &      1     &       1  \\
+    2057&-&3072  &      3     &      1     &       1  \\
+    3073&-&4096  &      4     &      1     &       1  \\
+    4097&-&...   &      5     &      2     &       1
+  \end{tabular}
+$$
+Le résultat obtenu est donc cohérent au vu de l'augmentation soudaine entre
+4000 et 4100 pour la version avec des slices de taille 64. En revanche, cette
+explication ne permet pas de comprendre l'évolution du temps d'exécution pour
+une taille de slice de 256 qui reste pour nous assez mystérieuse.
 
-
-\begin{figure}[ht]
+\begin{figure}[htb]
 	\caption{Lennard-Jones V2 : Comparaison des slices}
 	\label{lennard-slices}
 	\includegraphics[width=\textwidth]{figures/lennard_slices.png}
