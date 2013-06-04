@@ -8,6 +8,6 @@ set tics out
 set terminal png size 1024,768
 set output "figures/collision_versions.png"
 
-plot '../results/collisions_v1.dat' with lines title "Collision v1",\
-     '../results/collisions_v2.dat' with lines title "Collision v2",\
-     '../results/collisions_v3.dat' with lines title "Collision v3"
+plot '../results/collisions_v1.dat' with linespoints title "Collision v1",\
+     '../results/collisions_v2.dat' with linespoints title "Collision v2",\
+     '../results/collisions_v3.dat' with linespoints title "Collision v3"

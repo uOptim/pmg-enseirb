@@ -6,8 +6,8 @@ set ylabel "Temps d'exécution moyen du kernel (en ms)"
 set tics out
 
 set terminal png size 1024,768
-set output "figures/collisions_slices.png"
+set output "figures/collision_slices.png"
 
-plot '../results/collisions_v3.dat'     with lines title "Slice 16",\
-     '../results/collisions_v3_64.dat'  with lines title "Slice 64",\
-     '../results/collisions_v3_256.dat' with lines title "Slice 256"
+plot '../results/collisions_v3.dat'     with linespoints title "Slice 16",\
+     '../results/collisions_v3_64.dat'  with linespoints title "Slice 64",\
+     '../results/collisions_v3_256.dat' with linespoints title "Slice 256"
