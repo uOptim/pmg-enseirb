@@ -11,6 +11,7 @@
 \usepackage{hyperref}
 \usepackage{geometry}
 \usepackage{tikz}
+\usepackage{appendix}
 
 \geometry{margin=2cm}
 
@@ -118,33 +119,6 @@ Afin de d'optimiser l'exécution de la fonction collision, nous avons cherché �
 rassembler les threads en workgroups afin qu'ils partagent de la mémoire.
 
 \subsubsection{Répartition des workgroups/threads}
-\begin{figure}[p]
-  \caption{Répartition des workgroups pour collision\_v3}
-  \label{collision-v3}
-  \resizebox{\columnwidth}{!}{
-    \begin{tikzpicture}[font=\Large]
-      \pgfmathsetmacro{\nbthreads}{32}
-      \pgfmathsetmacro{\wgsize}{16}
-      %collision rectangles
-      \foreach \x in {2, ..., \nbthreads} {
-        \foreach \y in {2, ..., \x} {
-          \draw [ultra thick] (\y, \nbthreads - \x) rectangle (\y + 1, \nbthreads - \x - 1);
-        }
-      }
-      % threads numbers
-      \foreach \x in {1, ..., \nbthreads} {
-        \node at (1.5 , \nbthreads - 0.5 - \x) {\x};
-      }
-      % work rectangles
-      \draw [red] (2, \nbthreads - 1) rectangle ( 18, \nbthreads - 1 - \wgsize);
-      \draw [red] (2, \nbthreads - 17) rectangle ( 18, \nbthreads - 17 - \wgsize);
-      \draw [red] (18, \nbthreads - 17) rectangle ( 34, \nbthreads - 17 - \wgsize);
-      \node [red, scale=10] at (10,\nbthreads -9) {0};
-      \node [red, scale=10] at (10,\nbthreads -25) {1};
-      \node [red, scale=10] at (26,\nbthreads -25) {2};
-    \end{tikzpicture}
-  }
-\end{figure}
 \paragraph{}
 Afin de simplifier la notation, on notera par la suite la taille d'un
 workgroup par $WG\_SIZE$.
@@ -203,43 +177,6 @@ locale à chaque fin de tranche et après chaque chargement de tranche.
 Chaque thread continue donc à calculer les forces pour une seule ligne, mais le
 partage de la mémoire permet d'économiser de parallèliser le chargement et donc
 d'économiser du temps. \ref{lennard-jones-v2}
-\begin{figure}[p]
-  \caption{Organisation des workgroups pour Lennard-Jones v2}
-  \label{lennard-jones-v2}
-  \resizebox{\columnwidth}{!}{
-    \begin{tikzpicture}[font=\Large]
-      \pgfmathsetmacro{\nbthreads}{64}
-      \pgfmathsetmacro{\wgsize}{16}
-      \pgfmathsetmacro{\nbgroups}{\nbthreads / \wgsize}
-      %force rectangles
-      \foreach \x in {1, ..., \nbthreads} {
-        \foreach \y in {1, ..., \nbthreads} {
-          \draw [ultra thick] (\y, \nbthreads - \x) rectangle (\y + 1, \nbthreads - \x - 1);
-        }
-      }
-      % threads numbers
-      \foreach \x in {1, ..., \nbthreads} {
-        \node at (0.5 , \nbthreads - 0.5 - \x) {\x};
-      }
-      % work rectangles
-      \foreach \x in {1, 17, ..., \nbthreads} {
-        \draw [red] (\nbthreads + 1, \x - 2) rectangle ( 1, \x + 14);
-      }
-      % barriers
-      \foreach \y in {0,16, ...,\nbthreads} {
-        \draw [violet, line width=6] (\y + 1, -1) -- (\y + 1, \nbthreads -1);
-        \node [violet, scale=5] at (\y + 0.5, \nbthreads) {barrier};
-        % text to add
-      }
-      % Workgroup text
-      \foreach \x [evaluate=\x as \currentIndex using {int(\nbgroups - \x)}] in {1, ..., \nbgroups} {
-        \foreach \y in {1, ..., \nbgroups} {
-          \node [red, scale=10] at (\y * \wgsize - 7, \x * \wgsize - 8) {\currentIndex};
-        }
-      }
-    \end{tikzpicture}
-  }
-\end{figure}
 \paragraph{}
 Comme pour la troisième version des collisions, nous avons décidé ici aussi de
 laisser la possibilité de changer la taille des workgroups, celle-ci étant
@@ -269,16 +206,6 @@ démarche semblable à celle utilisée pour l'option \verb!--full_speed!.
 \section{Performances mesurées}
 
 \subsection{Cas de la fonction collision}
-\begin{figure}[p]
-	\caption{Collisions : Comparaison des versions}
-	\label{collisions-versions}
-	\includegraphics[width=\textwidth]{figures/collision_versions.png}
-\end{figure}
-\begin{figure}[p]
-	\caption{Collisions V3 : Comparaison des tailles de workgroup}
-	\label{collisions-slices}
-	\includegraphics[width=\textwidth]{figures/collision_slices.png}
-\end{figure}
 
 Les performances sont comparées en figure \ref{collisions-versions}. La différence entre la première et la seconde version est très faible. Bien
 que dans la seconde version le travail donné à chaque thread est plus
@@ -299,11 +226,6 @@ Les performances des deux versions de Lennard-Jones sont comparées en figure
 le facteur de temps étant de plus de 10 lorsque l'on approche des 2500 atomes.
 Pour cette comparaison, il est important de noter que nous avons utilisé la
 taille de workgroup par défaut, c'est à dire 16.
-\begin{figure}[p]
-	\caption{Lennard-Jones : Comparaison des versions}
-	\label{lennard-versions}
-	\includegraphics[width=\textwidth]{figures/lennard_versions.png}
-\end{figure}
 \paragraph{}
 Dans la figure \ref{lennard-slices}, nous avons uniquement cherché à évaluer les
 performances de la seconde version de Lennard-Jones en fonction de la taille de
@@ -345,12 +267,6 @@ Le résultat obtenu est donc cohérent au vu de l'augmentation soudaine entre
 cette explication ne permet pas de comprendre l'évolution du temps d'exécution
 pour une taille de workgroup de 256, celle-ci reste pour nous assez mystérieuse.
 
-\begin{figure}[p]
-	\caption{Lennard-Jones V2 : Comparaison de la taille des workgroups}
-	\label{lennard-slices}
-	\includegraphics[width=\textwidth]{figures/lennard_slices.png}
-\end{figure}
-
 \section{Perspectives}
 Bien que nous ayons pu essayer différentes implémentations des différents
 noyaux et que nous ayons pu estimer leur performances en fonction de la
@@ -374,4 +290,95 @@ nous paraît à présent assez clair que si l'on sait sur quel GPU notre code
 est sensé tourner, il est intéressant d'effectuer quelques tests afin de
 déterminer la taille de workgroup idéale pour un problème donné.
 
+\newpage
+
+\appendix
+\section{Description des workgroups}
+\begin{figure}[H]
+  \caption{Répartition des workgroups pour collision\_v3}
+  \label{collision-v3}
+  \resizebox{\columnwidth}{!}{
+    \begin{tikzpicture}[font=\Large]
+      \pgfmathsetmacro{\nbthreads}{32}
+      \pgfmathsetmacro{\wgsize}{16}
+      %collision rectangles
+      \foreach \x in {2, ..., \nbthreads} {
+        \foreach \y in {2, ..., \x} {
+          \draw [ultra thick] (\y, \nbthreads - \x) rectangle (\y + 1, \nbthreads - \x - 1);
+        }
+      }
+      % threads numbers
+      \foreach \x in {1, ..., \nbthreads} {
+        \node at (1.5 , \nbthreads - 0.5 - \x) {\x};
+      }
+      % work rectangles
+      \draw [red] (2, \nbthreads - 1) rectangle ( 18, \nbthreads - 1 - \wgsize);
+      \draw [red] (2, \nbthreads - 17) rectangle ( 18, \nbthreads - 17 - \wgsize);
+      \draw [red] (18, \nbthreads - 17) rectangle ( 34, \nbthreads - 17 - \wgsize);
+      \node [red, scale=10] at (10,\nbthreads -9) {0};
+      \node [red, scale=10] at (10,\nbthreads -25) {1};
+      \node [red, scale=10] at (26,\nbthreads -25) {2};
+    \end{tikzpicture}
+  }
+\end{figure}
+\begin{figure}[H]
+  \caption{Organisation des workgroups pour Lennard-Jones v2}
+  \label{lennard-jones-v2}
+  \resizebox{\columnwidth}{!}{
+    \begin{tikzpicture}[font=\Large]
+      \pgfmathsetmacro{\nbthreads}{64}
+      \pgfmathsetmacro{\wgsize}{16}
+      \pgfmathsetmacro{\nbgroups}{\nbthreads / \wgsize}
+      %force rectangles
+      \foreach \x in {1, ..., \nbthreads} {
+        \foreach \y in {1, ..., \nbthreads} {
+          \draw [ultra thick] (\y, \nbthreads - \x) rectangle (\y + 1, \nbthreads - \x - 1);
+        }
+      }
+      % threads numbers
+      \foreach \x in {1, ..., \nbthreads} {
+        \node at (0.5 , \nbthreads - 0.5 - \x) {\x};
+      }
+      % work rectangles
+      \foreach \x in {1, 17, ..., \nbthreads} {
+        \draw [red] (\nbthreads + 1, \x - 2) rectangle ( 1, \x + 14);
+      }
+      % barriers
+      \foreach \y in {0,16, ...,\nbthreads} {
+        \draw [violet, line width=6] (\y + 1, -1) -- (\y + 1, \nbthreads -1);
+        \node [violet, scale=5] at (\y + 0.5, \nbthreads) {barrier};
+        % text to add
+      }
+      % Workgroup text
+      \foreach \x [evaluate=\x as \currentIndex using {int(\nbgroups - \x)}] in {1, ..., \nbgroups} {
+        \foreach \y in {1, ..., \nbgroups} {
+          \node [red, scale=10] at (\y * \wgsize - 7, \x * \wgsize - 8) {\currentIndex};
+        }
+      }
+    \end{tikzpicture}
+  }
+\end{figure}
+\newpage
+\section{Graphiques de comparaison}
+%graphes en annexes
+\begin{figure}[!ht]
+	\caption{Collisions : Comparaison des versions}
+	\label{collisions-versions}
+	\includegraphics[width=\textwidth]{figures/collision_versions.png}
+\end{figure}
+\begin{figure}[!ht]
+	\caption{Collisions V3 : Comparaison des tailles de workgroup}
+	\label{collisions-slices}
+	\includegraphics[width=\textwidth]{figures/collision_slices.png}
+\end{figure}
+\begin{figure}[!ht]
+	\caption{Lennard-Jones : Comparaison des versions}
+	\label{lennard-versions}
+	\includegraphics[width=\textwidth]{figures/lennard_versions.png}
+\end{figure}
+\begin{figure}[!ht]
+	\caption{Lennard-Jones V2 : Comparaison de la taille des workgroups}
+	\label{lennard-slices}
+	\includegraphics[width=\textwidth]{figures/lennard_slices.png}
+\end{figure}
 \end{document}
