@@ -252,12 +252,20 @@ void atom_collision_v3(__global float *pos, __global float *speed, float radius,
 	}
 }
 
+#define COLLISION_VERSION 3
+
 __kernel
 void atom_collision(__global float *pos, __global float *speed, float radius, int N)
 {
-	//atom_collision_v1(pos, speed, radius);
-	//atom_collision_v2(pos, speed, radius);
+#if COLLISION_VERSION == 1
+	atom_collision_v1(pos, speed, radius);
+#endif
+#if COLLISION_VERSION == 2
+	atom_collision_v2(pos, speed, radius);
+#endif
+#if COLLISION_VERSION == 3
 	atom_collision_v3(pos, speed, radius, N);
+#endif
 }
 
 __kernel
